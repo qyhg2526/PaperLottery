@@ -1,0 +1,289 @@
+# ==========================================================================
+#  PaperLottery 主配置
+#  ------------------------------------------------------------------------
+#  ⚠ 抽奖奖励不在这里配置！
+#     所有卡池与奖品都放在同目录的 rewards.yml 中，方便单独编辑与备份。
+#     本文件只负责：全局设置、品质定义、货币定义、抽奖动画、提示文案。
+#
+#  常用占位符（可用在 messages 与奖品描述中）：
+#    %player%        玩家名
+#    %pool%          卡池 ID          %pool_name%   卡池展示名
+#    %prize%         奖品 ID          %prize_name%  奖品展示名
+#    %rarity%        品质 ID          %rarity_name% 品质展示名  %rarity_color% 品质颜色
+#    %amount%        抽奖次数         %count%       奖品件数
+#    %cost%          消耗数量         %cost_text%   格式化后的消耗（如 $1,000.00）
+#    %balance%       当前余额         %balance_text% 格式化后的余额
+#    %currency%      货币名称         %time%        冷却剩余秒数        %total% 累计抽奖次数
+#  另外，安装 PlaceholderAPI 后，任意 PAPI 变量也可直接书写（例如 %player_level%）。
+#  文案支持 MiniMessage（<gold>、<gradient:...>）与旧版颜色代码（&6）。
+# ==========================================================================
+
+settings:
+  # 打开抽奖界面时默认选中的卡池
+  default-pool: normal
+  # 单次最大抽奖次数（防止误操作与性能问题）
+  max-amount: 100
+  # 界面默认选中的连抽次数
+  default-amount: 1
+  # 下拉框可供选择的连抽次数
+  amount-options: [1, 5, 10]
+  # 抽奖前是否需要二次确认对话框
+  require-confirmation: true
+  # 两次抽奖之间的冷却（毫秒）
+  cooldown-millis: 1500
+  # 点击对话框中的“开始抽奖”是否直接抽奖（false 表示走确认流程）
+  direct-draw-on-click: false
+  # 背包满时是否把奖品掉落在玩家脚下
+  drop-when-full: true
+  # 每名玩家保留的流水条数
+  history-limit: 50
+  # 调试日志
+  debug: false
+
+  dialog:
+    # 对话框正文宽度（1-1024）
+    body-width: 220
+    # 是否使用原版 item 正文组件展示奖品。
+    # 注意：原版对话框的 item 组件对物品数据格式要求严格，部分服务端构建可能拒绝该数据包，
+    #       导致对话框无法打开。默认使用带品质颜色的文本正文，稳定兼容所有 26.2 构建。
+    use-item-body: false
+    # 对话框按钮点击后的行为：close（关闭）/ none（不处理）/ wait（等待响应）
+    after-action: close
+
+  broadcast:
+    # 是否开启全服播报（按 rewards.yml 中卡池的 announce-rarities 触发）
+    enabled: true
+    # 播报是否也输出到控制台
+    console: true
+    # “一发入魂”播报使用的品质名（仅用于文案展示）
+    lucky-rarity: legendary
+
+  sounds:
+    enabled: true
+
+  # 权重（出货率）加成：命中权限时，所有奖品权重乘以对应倍率（取最大值）
+  bonus:
+    permission-multiplier:
+      - "paperlottery.bonus.vip:1.25"
+      - "paperlottery.bonus.svip:1.5"
+    # 周末（周六、周日）全局权重倍率
+    weekend: 1.0
+    # 时段加成，格式 "开始HH:mm-结束HH:mm:倍率"，支持跨零点
+    hours:
+      - "20:00-23:00:1.2"
+
+# --------------------------------------------------------------------------
+#  抽奖动画
+#    type 可选值：
+#      inventory —— 箱子开箱式转盘（GUI 横向滚动 + 指针定格，类似 CS:GO 开箱）
+#      title     —— 屏幕中央标题快速翻滚奖品名
+#      actionbar —— 物品栏上方文字滚动（开销最小）
+#      none      —— 关闭动画，直接出结果
+# --------------------------------------------------------------------------
+animation:
+  enabled: true
+  type: inventory
+
+  # 单次抽奖动画的滚动时长（tick，20 tick = 1 秒），仅 title / actionbar 使用
+  duration-ticks: 48
+
+  # 转盘可见格子数（9 表示 1 行 9 格）
+  reel-size: 9
+  # 指针所在的格子（0 起算；9 格时 4 表示正中间）
+  cursor-slot: 4
+  # 结果定格后在指针处停留的 tick 数
+  settle-ticks: 15
+
+  # 单次最多为几次抽奖播放动画，超出的部分直接结算（例如十连只播前 10 次）
+  max-animated-pulls: 10
+
+  # 滚动阶段每格耗时（毫秒），越小越快
+  roll-tick-ms: 55
+  # 收尾阶段每格最慢耗时（毫秒），用于制造“减速停下”的手感
+  min-slot-tick-ms: 90
+  # 减速曲线：数值越大，越靠后的格子越慢
+  slot-ticks: [1, 2, 3, 5, 8, 13]
+
+  # 转盘上是否显示奖品名（false 时只显示材质图标）
+  show-names: true
+
+  # 转盘空位填充物（按顺序循环使用）
+  filler-material: GRAY_STAINED_GLASS_PANE
+  filler-name:
+    - "<dark_gray>▪"
+    - "<dark_gray>▫"
+    - "<gray>•"
+    - "<dark_gray>◆"
+  filler-lore: []
+
+  sounds:
+    # 每一格滚动的音效；支持命名空间写法（block.note_block.hat）或枚举写法（BLOCK_NOTE_BLOCK_HAT）
+    tick: "block.note_block.hat"
+    # 结果定格时的音效
+    win: "entity.player.levelup"
+
+# --------------------------------------------------------------------------
+# 品质定义：顺序即稀有度等级（越靠后越稀有），用于保底与概率展示
+#   weight    该品质的权重（仅作参考，实际概率由 rewards.yml 中奖品的 weight 决定）
+#   broadcast 该品质奖品的全服播报文案，留空表示不播报
+# --------------------------------------------------------------------------
+rarities:
+  common:
+    display-name: "<gray>普通"
+    weight: 1000
+    broadcast: ""
+  uncommon:
+    display-name: "<green>优秀"
+    weight: 600
+    broadcast: ""
+  rare:
+    display-name: "<blue>稀有"
+    weight: 250
+    broadcast: ""
+  epic:
+    display-name: "<light_purple>史诗"
+    weight: 60
+    broadcast: "<gray>[<gold>抽奖<gray>] <white>%player% <gray>在 <white>%pool_name% <gray>中抽到了 %rarity_color%%prize_name%<gray>！"
+  legendary:
+    display-name: "<gold>传说"
+    weight: 10
+    broadcast: "<gray>[<gold>抽奖<gray>] <gold>✦ <white>%player% <gray>欧气爆发，抽到了 %rarity_color%%prize_name%<gold>！"
+
+# --------------------------------------------------------------------------
+# 货币定义（多货币核心）
+#   type: vault       —— Vault 主经济（自动兼容 EssentialsX / CMI / XConomy 等）
+#   type: vault-multi —— Vault 多货币账户（PlayerPoints、GemsEconomy 多币种等）
+#                        account 字段填写账户名，例如 points / gems / tokens
+#   type: xp          —— 原版经验；levels: true 表示按等级计费，false 表示按经验点
+#   type: item        —— 原版物品；material 填写材质名
+#   display-name 货币展示名（MiniMessage），unit 货币单位
+# --------------------------------------------------------------------------
+currencies:
+  vault:
+    type: vault
+    display-name: "<gold>金币"
+    unit: "金币"
+  xp:
+    type: xp
+    display-name: "<green>经验等级"
+    levels: true
+    unit: "级"
+  points:
+    type: vault-multi
+    account: points
+    display-name: "<aqua>点券"
+    unit: "点"
+  diamond:
+    type: item
+    material: DIAMOND
+    display-name: "<aqua>钻石"
+    unit: "颗"
+    # 是否忽略物品的 NBT / 自定义模型数据，只比较材质
+    ignore-meta: true
+
+# --------------------------------------------------------------------------
+# 文案：可自由增删，缺失的 key 会使用插件内置的默认文案
+# --------------------------------------------------------------------------
+messages:
+  prefix: "<gray>[<gold>抽奖<gray>] <reset>"
+
+  command:
+    player-only: "<red>该命令只能由玩家执行。"
+    no-permission: "<red>你没有权限执行该操作。"
+    unknown-subcommand: "<red>未知的子命令，请使用 <yellow>/lottery help<red>。"
+    reloaded: "<green>配置已重新加载，共载入 <white>%pools%<green> 个卡池。"
+
+  draw:
+    unknown-pool: "<red>找不到卡池 <yellow>%pool%<red>。"
+    pool-locked: "<red>你还不满足卡池 <yellow>%pool_name%<red> 的参与条件。"
+    pool-empty: "<red>卡池 <yellow>%pool_name%<red> 暂无可抽取的奖品。"
+    currency-missing: "<red>该卡池配置的货币 <yellow>%currency%<red> 当前不可用，请联系管理员。"
+    cooldown: "<red>操作过于频繁，请等待 <yellow>%time%<red> 秒后再试。"
+    busy: "<red>上一次抽奖还在结算中，请稍候。"
+    insufficient: "<red>余额不足：需要 <yellow>%cost% %currency%<red>，当前仅有 <yellow>%balance% %currency%<red>。"
+    charge-failed: "<red>扣款失败，抽奖已取消，请稍后再试。"
+    failed: "<red>抽奖过程中出现异常，已取消本次消耗。"
+    empty: "<yellow>本次没有可抽取的奖品（可能已全部达到上限）。"
+    success: "<green>抽奖完成！消耗 <yellow>%cost% %currency%<green>，获得：%summary%"
+    bag-full: "<yellow>背包空间不足，<white>%dropped%<yellow> 件奖品已掉落在你脚下。"
+    pity-triggered: "<gold>✨ 保底触发！<yellow>%rarity_name%<gold> 品质必得！"
+    lucky: "<gold>✨ 欧皇时刻！一发入魂 <yellow>%prize_name%<gold>！"
+
+  broadcast:
+    message: "<gray>[<gold>抽奖<gray>] <white>%player% <gray>在 <white>%pool_name% <gray>中抽到了 %rarity_color%%prize_name%<gray>！"
+    lucky: "<gray>[<gold>抽奖<gray>] <gold>欧皇降临！<white>%player% <gray>一发入魂 <gold>%prize_name%<gray>！"
+
+  # 抽奖动画相关文案
+  animation:
+    title: "<gold>✦ 抽取中… ✦"
+    subtitle: "<gray>卡池：<white>%pool_name%"
+    actionbar: "<gray>抽取中… %prize_name%"
+    filler-material: "GRAY_STAINED_GLASS_PANE"
+
+  admin:
+    give-self: "<green>已为你发放奖品 <white>%prize_name%<green> ×%amount%。"
+    give-other: "<green>已向 <white>%target%<green> 发放奖品 <white>%prize_name%<green> ×%amount%。"
+    give-received: "<green>你收到了来自管理员的奖品：<white>%prize_name%<green> ×%amount%。"
+    give-failed: "<red>发放失败：找不到奖品 <yellow>%prize%<red> 或玩家不在线。"
+    player-not-found: "<red>找不到玩家 <yellow>%target%<red>。"
+    reset-done: "<green>已重置 <white>%target%<green> 在卡池 <white>%pool_name%<green> 的保底与统计。"
+    no-pools: "<red>当前没有任何可用卡池，请检查 rewards.yml。"
+
+  # 对话框内的文案（Dialog API）
+  dialog:
+    amount-label: "抽奖次数"
+    amount-option: "%amount% 连"
+    pool-label: "选择卡池"
+    balance-line: "<gray>我的余额：<white>%balance_text% <dark_gray>(%currency%)"
+    cost-line: "<gray>本次消耗：<white>%cost_text%"
+    result-line: "<gray>上次结果：%result%"
+    locked: "<red>✖ 你当前不满足该卡池的参与条件。"
+    currency-unavailable: "<red>✖ 该卡池的货币 <yellow>%currency%<red> 当前不可用，请联系管理员。"
+    unaffordable: "<red>✖ 余额不足，无法抽奖。"
+    pity-header: "<dark_gray>—— 保底进度 ——"
+    pity-line: "<gray>%rarity_color%%rarity_name%<gray>：<white>%current%<gray>/<white>%threshold% %bar%%ready%"
+    pity-ready: " <gold>【已就绪】"
+    pity-will-guarantee: "<gold>　　下一次抽取必得该品质或更高"
+    pity-remain: "<dark_gray>　　还差 <white>%remain% <dark_gray>次必得该品质"
+    pity-total: "<gray>本卡池累计抽奖：<white>%total% <gray>次"
+    pity-title: "<gold>保底进度"
+    pity-title-line: "<gold>保底进度"
+    pity-none: "<gray>该卡池没有配置保底机制。"
+    button-draw: "<gold>开始抽奖 <gray>(%cost_text%)"
+    button-draw-tooltip: "<gray>点击后按上方选择的次数抽奖"
+    button-rates: "<aqua>概率公示"
+    button-rates-tooltip: "<gray>查看各奖品的实时概率"
+    button-history: "<yellow>我的记录"
+    button-history-tooltip: "<gray>查看最近的抽奖流水"
+    button-admin: "<red>管理面板"
+    button-admin-tooltip: "<gray>重载配置 / 模拟抽奖 / 重置保底"
+    button-close: "<gray>关闭"
+    button-close-tooltip: "<gray>关闭界面"
+    button-back: "<gray>返回主界面"
+    button-again: "<gold>再来一次 <gray>(%amount%连)"
+    button-again-tooltip: "<gray>以相同次数再抽一次"
+    result-title: "<gold>抽奖结果"
+    result-header: "<gold>✦ 抽奖结果 ✦"
+    result-prize: "%rarity_color%▸ %prize_name% <gray>×<white>%count%    <dark_gray>[%rarity_name%]"
+    result-footer: "<gray>本次消耗：<white>%cost_text%<gray>　当前余额：<white>%balance_text%"
+    result-pity: "<gold>✨ 本次触发了保底！"
+    rates-title: "<aqua>概率公示"
+    rates-header: "<gold>概率公示 <dark_gray>(权重轮盘，实时归一化)"
+    rates-line: "%rarity_color%▸ %prize_name% <dark_gray>| <white>%percent%% <dark_gray>(权重 %weight%)"
+    rates-note: "<dark_gray>※ 概率会随保底进度、权限加成与活动倍率动态变化；达到上限的奖品会被移出轮盘。"
+    rates-pity: "<dark_gray>※ 本卡池存在保底机制。"
+    history-title: "<yellow>我的记录"
+    history-header: "<gold>我的抽奖记录"
+    history-empty: "<gray>暂无抽奖记录。"
+    history-line: "<dark_gray>%time% <gray>[%pool%] <white>%amount%连 <dark_gray>→ <gray>%summary%"
+    confirm-title: "<gold>确认抽奖"
+    confirm-body:
+      - "<gray>卡池：<white>%pool_name%"
+      - "<gray>次数：<white>%amount% 连"
+      - "<gray>消耗：<white>%cost_text%"
+      - "<gray>余额：<white>%balance_text%"
+    confirm-yes: "<green>✔ 确认抽奖"
+    confirm-yes-tooltip: "<gray>立即消耗并开始抽奖"
+    confirm-no: "<red>✖ 再想想"
+    item-amount: "<gray>数量：<white>%amount%"
+    item-enchant: "<gray>附魔：<white>%enchant% %level%"

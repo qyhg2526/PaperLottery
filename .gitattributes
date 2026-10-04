@@ -1,0 +1,22 @@
+# 统一换行符，避免 Windows 提交后 Linux 构建出现 diff 噪声
+* text=auto eol=lf
+
+# Windows 脚本保留 CRLF，否则部分环境下 cmd/powershell 解析异常
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# PowerShell 脚本：仓库内统一 LF，构建脚本自身已带 UTF-8 BOM
+*.ps1 text eol=lf
+
+# 二进制依赖不做换行转换
+*.jar binary
+*.png binary
+*.jpg binary
+*.gif binary
+*.zip binary
+*.gz binary
+
+# 这些文件按二进制处理，避免 Git 尝试合并
+*.xlsx binary
+*.docx binary
+*.pptx binary

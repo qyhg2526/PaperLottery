@@ -1,0 +1,43 @@
+# ---------------------------------------------------------------- 构建产物
+/build/
+# 只忽略仓库根目录的 build/，确保 lib/ 里的依赖 jar 会被提交
+!/build/libs/README.md
+
+# ---------------------------------------------------------------- Gradle
+.gradle/
+!gradle/wrapper/gradle-wrapper.jar
+
+# ---------------------------------------------------------------- 服务端数据（本地测试用）
+# 若把插件直接跑在仓库根目录，这些文件不应该被提交
+logs/
+world/
+world_nether/
+world_the_end/
+plugins/PaperLottery/playerdata.yml
+run/
+*.log
+*.log.gz
+
+# ---------------------------------------------------------------- IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+*.code-workspace
+.settings/
+.classpath
+.project
+nbproject/
+
+# ---------------------------------------------------------------- 系统
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---------------------------------------------------------------- 临时/验证文件
+/tmp/
+/scratch/
+*~
+*.bak
+*.orig

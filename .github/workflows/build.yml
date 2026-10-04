@@ -1,0 +1,73 @@
+name: Build
+
+on:
+  push:
+    branches: [main, master]
+    tags: ['v*']
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: 编译并校验插件
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 JDK 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+
+      # 仓库自带 lib/ 依赖与 ECJ 编译器，因此无需联网解析依赖。
+      # 之所以不用 javac：Paper 26.2 的 paper-api jar 中同一方法带有两份
+      # @NotNull 类型批注，javac 会报「无法将类型批注附加到…」，ECJ 可正常处理。
+      - name: 编译打包
+        shell: pwsh
+        run: ./build.ps1
+
+      - name: 校验产物
+        shell: pwsh
+        run: |
+          $jar = Get-ChildItem build/libs/*.jar | Select-Object -First 1
+          if (-not $jar) { throw '未生成 jar' }
+          Write-Host "产物: $($jar.FullName) ($($jar.Length) 字节)"
+
+          # 校验 plugin.yml 与版本号
+          $tmp = Join-Path $env:RUNNER_TEMP 'verify'
+          New-Item -ItemType Directory -Force -Path $tmp | Out-Null
+          Copy-Item $jar.FullName (Join-Path $tmp 'plugin.jar')
+          Push-Location $tmp
+          jar xf plugin.jar plugin.yml config.yml rewards.yml
+          Pop-Location
+
+          $plugin = Get-Content (Join-Path $tmp 'plugin.yml') -Raw
+          if ($plugin -notmatch 'main:\s*cn\.dsh\.lottery\.PaperLotteryPlugin') {
+            throw 'plugin.yml 缺少正确的 main 入口'
+          }
+          if (Test-Path (Join-Path $tmp 'config.yml')) { Write-Host '✓ config.yml 已打包' } else { throw '缺少 config.yml' }
+          if (Test-Path (Join-Path $tmp 'rewards.yml')) { Write-Host '✓ rewards.yml 已打包' } else { throw '缺少 rewards.yml' }
+
+          # 校验关键类存在
+          $classes = jar tf $jar.FullName
+          foreach ($c in @(
+              'cn/dsh/lottery/PaperLotteryPlugin.class',
+              'cn/dsh/lottery/lottery/PityEngine.class',
+              'cn/dsh/lottery/animation/AnimationRunner.class',
+              'cn/dsh/lottery/ui/DialogManager.class')) {
+            if ($classes -notcontains $c) { throw "缺少类: $c" }
+          }
+          Write-Host '✓ 关键类齐全'
+
+      - name: 上传构建产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: PaperLottery
+          path: build/libs/*.jar
+          if-no-files-found: error
