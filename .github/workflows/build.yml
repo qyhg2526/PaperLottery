@@ -74,3 +74,44 @@ jobs:
           name: PaperLottery
           path: build/libs/*.jar
           if-no-files-found: error
+
+  # 打 v* 标签时自动创建 GitHub Release，并把编译好的 jar 附上去
+  release:
+    name: 发布 Release
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 下载构建产物
+        uses: actions/download-artifact@v4
+        with:
+          name: PaperLottery
+          path: dist
+
+      - name: 生成发布说明
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          # 标签形如 v1.0.1，去掉前缀得到版本号
+          $version = '${{ github.ref_name }}'.TrimStart('v', 'V')
+          Write-Host "版本: $version"
+          Write-Host "产物:"
+          Get-ChildItem dist -Recurse -File | ForEach-Object { "  $($_.Name) ($($_.Length) 字节)" }
+          ./scripts/extract-changelog.ps1 -Version $version -Output release-notes.md
+          Write-Host '--- 发布说明 ---'
+          Get-Content release-notes.md -Encoding UTF8
+
+      - name: 创建 Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: PaperLottery ${{ github.ref_name }}
+          body_path: release-notes.md
+          files: dist/**/*.jar
+          draft: false
+          prerelease: false
+          fail_on_unmatched_files: true
