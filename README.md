@@ -742,4 +742,20 @@ pools:
 
 ## 许可
 
-本插件为示例项目，可自由修改与分发。
+本项目基于 [MIT License](LICENSE) 开源，可自由使用、修改与分发。
+
+## 致谢
+
+* [Paper](https://papermc.io/) —— Dialog API 与全部服务端接口
+* [Adventure](https://docs.advntr.dev/) —— MiniMessage、Title 与文本组件
+* [Vault](https://github.com/MilkBowl/VaultAPI) —— 经济系统统一接口
+* [Eclipse JDT](https://www.eclipse.org/jdt/) —— ECJ 编译器，用于绕开 paper-api 的类型批注问题
+
+## 贡献
+
+欢迎提交 Issue 与 Pull Request。
+
+* 提交前请确保 `./build.ps1` 能通过编译
+* 改动抽奖或保底逻辑时，请说明对以下不变量的影响：
+  计数不超限、就绪必兑现、高品质优先、计数即真实间隔、无幽灵计数
+* 涉及概率或保底的改动，建议附上模拟数据（例如 2000 次抽取的计数分布）
