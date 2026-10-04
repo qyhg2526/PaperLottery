@@ -35,24 +35,26 @@ jobs:
       - name: 校验产物
         shell: pwsh
         run: |
+          $ErrorActionPreference = 'Stop'
           $jar = Get-ChildItem build/libs/*.jar | Select-Object -First 1
           if (-not $jar) { throw '未生成 jar' }
           Write-Host "产物: $($jar.FullName) ($($jar.Length) 字节)"
 
-          # 校验 plugin.yml 与版本号
-          $tmp = Join-Path $env:RUNNER_TEMP 'verify'
+          # 校验 plugin.yml 与打包进来的资源
+          $tmp = Join-Path ([System.IO.Path]::GetTempPath()) 'pl-verify'
           New-Item -ItemType Directory -Force -Path $tmp | Out-Null
-          Copy-Item $jar.FullName (Join-Path $tmp 'plugin.jar')
           Push-Location $tmp
-          jar xf plugin.jar plugin.yml config.yml rewards.yml
+          jar xf $jar.FullName plugin.yml config.yml rewards.yml
           Pop-Location
 
           $plugin = Get-Content (Join-Path $tmp 'plugin.yml') -Raw
           if ($plugin -notmatch 'main:\s*cn\.dsh\.lottery\.PaperLotteryPlugin') {
             throw 'plugin.yml 缺少正确的 main 入口'
           }
-          if (Test-Path (Join-Path $tmp 'config.yml')) { Write-Host '✓ config.yml 已打包' } else { throw '缺少 config.yml' }
-          if (Test-Path (Join-Path $tmp 'rewards.yml')) { Write-Host '✓ rewards.yml 已打包' } else { throw '缺少 rewards.yml' }
+          Write-Host '✓ plugin.yml 入口正确'
+          foreach ($f in @('config.yml', 'rewards.yml')) {
+            if (Test-Path (Join-Path $tmp $f)) { Write-Host "✓ $f 已打包" } else { throw "缺少 $f" }
+          }
 
           # 校验关键类存在
           $classes = jar tf $jar.FullName
@@ -63,7 +65,8 @@ jobs:
               'cn/dsh/lottery/ui/DialogManager.class')) {
             if ($classes -notcontains $c) { throw "缺少类: $c" }
           }
-          Write-Host '✓ 关键类齐全'
+          $count = ($classes | Where-Object { $_ -like '*.class' }).Count
+          Write-Host "✓ 关键类齐全，共 $count 个 class"
 
       - name: 上传构建产物
         uses: actions/upload-artifact@v4

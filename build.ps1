@@ -48,9 +48,12 @@ foreach ($dir in @($classesDir, $libsDir)) {
 New-Item -ItemType Directory -Force -Path $classesDir, $libsDir | Out-Null
 
 # ---------------------------------------------------------------- 编译
+# 路径分隔符必须跟随操作系统：Windows 用 ';'，Linux / macOS 用 ':'。
+# 用错会导致 -cp 整体被当成一个无效路径，出现满屏「The import org.bukkit cannot be resolved」。
+$pathSeparator = if ($IsWindows -or $env:OS -eq 'Windows_NT') { ';' } else { ':' }
 $classpath = (Get-ChildItem $lib -Filter '*.jar' |
     Where-Object { $_.Name -notlike 'ecj-*' } |
-    ForEach-Object { $_.FullName }) -join ';'
+    ForEach-Object { $_.FullName }) -join $pathSeparator
 $sources = Get-ChildItem $srcDir -Recurse -Filter '*.java' | ForEach-Object { $_.FullName }
 
 Write-Host "[1/4] 使用 ECJ 编译 $($sources.Count) 个源文件 ..." -ForegroundColor Cyan
