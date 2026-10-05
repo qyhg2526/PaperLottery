@@ -1,0 +1,372 @@
+# ==========================================================================
+#  PaperLottery 奖励配置（卡池 / 奖品）
+#  ------------------------------------------------------------------------
+#  这个文件专门用来改抽奖奖励，改完执行 /lottery reload 即可生效，无需重启。
+#  提示文案与动画在 config.yml，品质与货币定义也在 config.yml。
+#
+#  ── 卡池结构 ────────────────────────────────────────────────────────────
+#  pools:
+#    <卡池ID>:                      # 英文 ID，玩家看不到；命令中用它指定卡池
+#      display-name: "<gold>卡池名"  # 玩家看到的卡池名（支持 MiniMessage）
+#      icon: CHEST                  # 保留字段
+#      description: [...]           # 对话框里的卡池介绍（可写多行）
+#      currency: vault              # 消耗的货币 ID（见 config.yml 的 currencies）
+#      cost:                        # 价格；default 为单次价，也可为不同连抽单独定价
+#        default: 500
+#        10: 4500
+#      amounts: [1, 5, 10]          # 该卡池允许的连抽次数
+#      permission: ""               # 需要的权限，留空表示人人可用
+#      guarantee-rarity: uncommon   # 每次至少保证的品质
+#      ten-pull-rarity: rare        # 连抽（≥2 次）至少保证的品质
+#      announce-rarities: [legendary]  # 抽到这些品质时全服播报
+#      pity:                        # 保底：连续 threshold 次没出该品质，下一次必出
+#        - rarity: epic
+#          threshold: 30
+#          reset-on-hit: true
+#      prizes:                      # 奖品列表
+#        <奖品ID>: { ... }
+#
+#  ── 单个奖品可用的字段 ──────────────────────────────────────────────────
+#  display-name: "<gold>奖品名"    # 玩家看到的名字（支持占位符与 MiniMessage）
+#  rarity: legendary              # 品质 ID，必须存在于 config.yml 的 rarities
+#  weight: 3                      # 权重：越大越容易抽中（概率 = 本权重 / 总权重）
+#  bonus-weight: 0                # 固定权重加成（可选）
+#
+#  item:                          # ① 物品奖励（可以只写 material 与 amount）
+#    material: DIAMOND            #    材质名，如 DIAMOND / NETHERITE_SWORD
+#    amount: 5                    #    固定数量
+#    amount-min: 2                #    或写数量区间（与 amount 二选一）
+#    amount-max: 5
+#    name: "<aqua>自定义名字"      #    可选：覆盖物品显示名
+#    lore: ["<gray>第一行"]        #    可选：物品描述
+#    enchants: ["sharpness:7"]    #    可选：附魔，格式 名称:等级
+#    model-data: 1001             #    可选：自定义模型数据
+#    unbreakable: true            #    可选：无法破坏
+#    glow: true                   #    可选：附魔光效
+#
+#  currency:                      # ② 货币奖励（可与 item 同时存在）
+#    id: vault                    #    发放的货币 ID
+#    min: 200                     #    随机区间
+#    max: 800
+#
+#  commands:                      # ③ 命令奖励（以控制台身份执行）
+#    - "console:say %player% 中奖了"
+#    - "player:me 我中奖了"        #    player: 前缀表示以玩家身份执行
+#
+#  limit: 5                       # 全服累计上限（-1 或不写表示不限）
+#  player-limit: 1                # 单名玩家累计上限
+#  daily-limit: 1                 # 单名玩家每日上限
+#
+#  conditions:                    # 抽取条件（可选）
+#    permission: [server.vip]
+#    permission-any: [a.perm, b.perm]
+#    permission-multiplier: ["server.mvp:1.5"]
+#    placeholder: ["%player_world%:world"]
+#    placeholder-min: ["%player_level%:30"]
+#    worlds: [world, world_nether]
+#
+#  ── 复制粘贴模板 ────────────────────────────────────────────────────────
+#      my_prize:
+#        display-name: "<gold>我的奖品"
+#        rarity: rare
+#        weight: 50
+#        item:
+#          material: DIAMOND
+#          amount: 8
+# ==========================================================================
+
+pools:
+  # ========================================================================
+  # 入门卡池：消耗金币
+  # ========================================================================
+  normal:
+    display-name: "<gradient:#8ecae6:#219ebc><bold>普通卡池"
+    icon: CHEST
+    description:
+      - "<gray>服务器入门卡池，人人都能参与。"
+      - "<gray>消耗 <white>%currency%<gray> 抽取随机奖励。"
+    currency: vault
+    cost:
+      default: 500
+      10: 4500
+    amounts: [1, 5, 10]
+    permission: ""
+    guarantee-rarity: uncommon
+    ten-pull-rarity: rare
+    announce-rarities: [legendary]
+    pity:
+      - rarity: epic
+        threshold: 30
+        reset-on-hit: true
+      - rarity: legendary
+        threshold: 90
+        reset-on-hit: true
+    prizes:
+      # ---------------- 普通 ----------------
+      bread:
+        display-name: "<gray>面包"
+        rarity: common
+        weight: 400
+        item:
+          material: BREAD
+          amount: 8
+      iron_ingot:
+        display-name: "<gray>铁锭"
+        rarity: common
+        weight: 380
+        item:
+          material: IRON_INGOT
+          amount-min: 8
+          amount-max: 16
+      exp_bottle:
+        display-name: "<gray>附魔之瓶"
+        rarity: common
+        weight: 320
+        item:
+          material: EXPERIENCE_BOTTLE
+          amount: 16
+      # ---------------- 优秀 ----------------
+      gold_ingot:
+        display-name: "<green>金锭"
+        rarity: uncommon
+        weight: 200
+        item:
+          material: GOLD_INGOT
+          amount-min: 8
+          amount-max: 16
+      coins_small:
+        display-name: "<green>金币红包"
+        rarity: uncommon
+        weight: 180
+        currency:
+          id: vault
+          min: 200
+          max: 800
+      arrows:
+        display-name: "<green>箭矢"
+        rarity: uncommon
+        weight: 160
+        item:
+          material: ARROW
+          amount: 64
+      # ---------------- 稀有 ----------------
+      diamond:
+        display-name: "<blue>钻石"
+        rarity: rare
+        weight: 70
+        item:
+          material: DIAMOND
+          amount-min: 2
+          amount-max: 5
+      xp_levels:
+        display-name: "<blue>经验等级券"
+        rarity: rare
+        weight: 60
+        currency:
+          id: xp
+          min: 5
+          max: 15
+      # ---------------- 史诗 ----------------
+      netherite_scrap:
+        display-name: "<light_purple>下界合金碎片"
+        rarity: epic
+        weight: 18
+        item:
+          material: NETHERITE_SCRAP
+          amount-min: 1
+          amount-max: 2
+          glow: true
+      coins_big:
+        display-name: "<light_purple>金币大礼包"
+        rarity: epic
+        weight: 12
+        currency:
+          id: vault
+          min: 2000
+          max: 6000
+      # ---------------- 传说 ----------------
+      netherite_sword:
+        display-name: "<gold>传说之剑"
+        rarity: legendary
+        weight: 3
+        # 全服限量 5 把，抽完自动从轮盘移除
+        limit: 5
+        item:
+          material: NETHERITE_SWORD
+          amount: 1
+          name: "<gold>传说之剑 <dark_gray>· <yellow>弑神"
+          lore:
+            - "<gray>从普通卡池中诞生的神器。"
+            - "<dark_gray>持有者：%player%"
+          enchants:
+            - "sharpness:7"
+            - "unbreaking:5"
+            - "mending:1"
+          unbreakable: true
+          glow: true
+        commands:
+          - "console:say %player% 抽到了传说之剑！"
+      dragon_egg:
+        display-name: "<gold>龙蛋"
+        rarity: legendary
+        weight: 1
+        # 每名玩家最多抽到 1 次
+        player-limit: 1
+        item:
+          material: DRAGON_EGG
+          amount: 1
+          glow: true
+
+  # ========================================================================
+  # 高级卡池：消耗点券（Vault 多货币账户）
+  # ========================================================================
+  premium:
+    display-name: "<gradient:#ffd166:#ef476f><bold>高级卡池"
+    icon: ENDER_CHEST
+    description:
+      - "<gray>使用 <aqua>点券 <gray>抽取高价值奖励。"
+      - "<red>每日限量，先到先得。"
+    currency: points
+    cost:
+      default: 10
+    amounts: [1, 5]
+    permission: paperlottery.pool.premium
+    guarantee-rarity: rare
+    announce-rarities: [epic, legendary]
+    pity:
+      - rarity: legendary
+        threshold: 50
+        reset-on-hit: true
+    prizes:
+      diamond_block:
+        display-name: "<blue>钻石块"
+        rarity: rare
+        weight: 100
+        item:
+          material: DIAMOND_BLOCK
+          amount: 1
+      emerald_block:
+        display-name: "<green>绿宝石块"
+        rarity: rare
+        weight: 100
+        item:
+          material: EMERALD_BLOCK
+          amount: 1
+      elytra:
+        display-name: "<light_purple>鞘翅"
+        rarity: epic
+        weight: 15
+        # 每人每天最多 1 个
+        daily-limit: 1
+        item:
+          material: ELYTRA
+          amount: 1
+          glow: true
+      beacon:
+        display-name: "<light_purple>信标"
+        rarity: epic
+        weight: 20
+        item:
+          material: BEACON
+          amount: 1
+      enchanted_golden_apple:
+        display-name: "<gold>附魔金苹果"
+        rarity: legendary
+        weight: 4
+        item:
+          material: ENCHANTED_GOLDEN_APPLE
+          amount-min: 1
+          amount-max: 3
+          glow: true
+
+  # ========================================================================
+  # 钻石卡池：完全免费，使用钻石物品作为货币（无需任何经济插件）
+  # ========================================================================
+  diamond:
+    display-name: "<aqua><bold>钻石卡池"
+    icon: DIAMOND
+    description:
+      - "<gray>使用 <aqua>钻石 <gray>抽取，无需任何经济插件。"
+    currency: diamond
+    cost:
+      default: 5
+      10: 45
+    amounts: [1, 5, 10]
+    announce-rarities: [legendary]
+    prizes:
+      coal:
+        display-name: "<gray>煤炭"
+        rarity: common
+        weight: 500
+        item:
+          material: COAL
+          amount: 16
+      iron_block:
+        display-name: "<green>铁块"
+        rarity: uncommon
+        weight: 250
+        item:
+          material: IRON_BLOCK
+          amount: 4
+      diamonds:
+        display-name: "<blue>钻石"
+        rarity: rare
+        weight: 80
+        item:
+          material: DIAMOND
+          amount-min: 3
+          amount-max: 8
+      totem:
+        display-name: "<gold>不死图腾"
+        rarity: legendary
+        weight: 5
+        item:
+          material: TOTEM_OF_UNDYING
+          amount: 1
+          glow: true
+
+  # ========================================================================
+  # 示例：经验卡池（原版经验等级作为货币，零依赖）
+  # 需要时把下面整段前面的注释去掉即可启用
+  # ========================================================================
+  # xp_pool:
+  #   display-name: "<green><bold>经验卡池"
+  #   icon: EXPERIENCE_BOTTLE
+  #   description:
+  #     - "<gray>用经验等级换取装备与素材。"
+  #   currency: xp
+  #   cost:
+  #     default: 3
+  #   amounts: [1, 5]
+  #   prizes:
+  #     stone:
+  #       display-name: "<gray>圆石"
+  #       rarity: common
+  #       weight: 400
+  #       item:
+  #         material: COBBLESTONE
+  #         amount: 32
+  #     iron_pickaxe:
+  #       display-name: "<green>铁镐"
+  #       rarity: uncommon
+  #       weight: 150
+  #       item:
+  #         material: IRON_PICKAXE
+  #         amount: 1
+  #         enchants: ["efficiency:3", "unbreaking:2"]
+  #     diamond_chestplate:
+  #       display-name: "<blue>钻石胸甲"
+  #       rarity: rare
+  #       weight: 40
+  #       item:
+  #         material: DIAMOND_CHESTPLATE
+  #         amount: 1
+  #         enchants: ["protection:4"]
+  #     enchanted_book:
+  #       display-name: "<gold>经验修补之书"
+  #       rarity: legendary
+  #       weight: 5
+  #       item:
+  #         material: ENCHANTED_BOOK
+  #         amount: 1
+  #         glow: true

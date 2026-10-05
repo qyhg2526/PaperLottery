@@ -115,6 +115,21 @@ public final class DataStore {
                     }
                 }
             }
+            // 每日抽奖次数：日期 -> 卡池 -> 次数
+            ConfigurationSection draws = node.getConfigurationSection("daily-draws");
+            if (draws != null) {
+                for (String date : draws.getKeys(false)) {
+                    ConfigurationSection poolNode = draws.getConfigurationSection(date);
+                    if (poolNode == null) {
+                        continue;
+                    }
+                    Map<String, Integer> target = data.dailyDraws()
+                            .computeIfAbsent(date, k -> new LinkedHashMap<>());
+                    for (String poolId : poolNode.getKeys(false)) {
+                        target.put(poolId.toLowerCase(Locale.ROOT), poolNode.getInt(poolId, 0));
+                    }
+                }
+            }
             for (Map<?, ?> raw : node.getMapList("history")) {
                 try {
                     data.history().add(new PullRecord(
@@ -236,6 +251,11 @@ public final class DataStore {
             data.dailyPrizes().forEach((date, map) -> {
                 ConfigurationSection target = daily.createSection(date);
                 map.forEach((prizeId, value) -> target.set(prizeId, value));
+            });
+            ConfigurationSection dailyDraws = node.createSection("daily-draws");
+            data.dailyDraws().forEach((date, map) -> {
+                ConfigurationSection target = dailyDraws.createSection(date);
+                map.forEach((poolId, value) -> target.set(poolId, value));
             });
             node.set("history", data.history().stream().map(record -> Map.of(
                     "time", record.time(),

@@ -27,6 +27,8 @@ public final class PlayerData {
     private final Map<String, Integer> prizeCounts = new LinkedHashMap<>();
     /** 日期 -> 奖品 ID -> 当日获得次数。 */
     private final Map<String, Map<String, Integer>> dailyPrizes = new LinkedHashMap<>();
+    /** 日期 -> 卡池 ID -> 当日抽奖次数（用于每日抽奖上限）。 */
+    private final Map<String, Map<String, Integer>> dailyDraws = new LinkedHashMap<>();
     /** 最近抽奖流水（最新在前）。 */
     private final List<PullRecord> history = new ArrayList<>();
 
@@ -106,9 +108,9 @@ public final class PlayerData {
         poolPrizes.computeIfAbsent(pool, k -> new LinkedHashMap<>()).merge(prizeId, amount, Integer::sum);
     }
 
-    /** 今日获得次数。 */
-    public int dailyCount(String prizeId) {
-        return dailyCount(LocalDate.now().toString(), prizeId);
+    /** 今日获得次数（按指定时区判定「今天」）。 */
+    public int dailyCount(String prizeId, java.time.ZoneId zone) {
+        return dailyCount(today(zone), prizeId);
     }
 
     public int dailyCount(String date, String prizeId) {
@@ -116,21 +118,63 @@ public final class PlayerData {
         return map == null ? 0 : map.getOrDefault(prizeId, 0);
     }
 
-    public void addDailyCount(String prizeId, int amount) {
-        dailyPrizes.computeIfAbsent(LocalDate.now().toString(), k -> new LinkedHashMap<>())
+    public void addDailyCount(String prizeId, int amount, java.time.ZoneId zone) {
+        dailyPrizes.computeIfAbsent(today(zone), k -> new LinkedHashMap<>())
                 .merge(prizeId, amount, Integer::sum);
+    }
+
+    /** 按指定时区取得「今天」的日期字符串。 */
+    public static String today(java.time.ZoneId zone) {
+        return LocalDate.now(zone == null ? java.time.ZoneId.systemDefault() : zone).toString();
+    }
+
+    // ---------------------------------------------------------------- 每日抽奖次数
+
+    /** 今日在指定卡池已抽的次数。 */
+    public int dailyDraws(String pool, java.time.ZoneId zone) {
+        return dailyDraws(today(zone), pool);
+    }
+
+    public int dailyDraws(String date, String pool) {
+        Map<String, Integer> map = dailyDraws.get(date);
+        return map == null ? 0 : map.getOrDefault(pool, 0);
+    }
+
+    /** 累加今日抽奖次数。 */
+    public void addDailyDraws(String pool, int amount, java.time.ZoneId zone) {
+        dailyDraws.computeIfAbsent(today(zone), k -> new LinkedHashMap<>())
+                .merge(pool, amount, Integer::sum);
+    }
+
+    /** 清零今日在指定卡池的抽奖次数（管理命令用）。 */
+    public void resetDailyDraws(String pool, java.time.ZoneId zone) {
+        Map<String, Integer> map = dailyDraws.get(today(zone));
+        if (map != null) {
+            map.remove(pool);
+        }
+    }
+
+    /** 全部每日抽奖计数（日期 -&gt; 卡池 -&gt; 次数）。 */
+    public Map<String, Map<String, Integer>> dailyDraws() {
+        return dailyDraws;
     }
 
     /** 清理过期日期数据，避免文件无限增长。 */
     public void pruneDaily(int keepDays) {
-        if (dailyPrizes.size() <= keepDays) {
+        pruneByDate(dailyPrizes, keepDays);
+        pruneByDate(dailyDraws, keepDays);
+    }
+
+    /** 按日期裁剪，只保留最近 {@code keepDays} 天。 */
+    private static void pruneByDate(Map<String, ?> map, int keepDays) {
+        if (map.size() <= keepDays) {
             return;
         }
-        List<String> keys = new ArrayList<>(dailyPrizes.keySet());
+        List<String> keys = new ArrayList<>(map.keySet());
         keys.sort(String::compareTo);
         int remove = keys.size() - keepDays;
         for (int i = 0; i < remove; i++) {
-            dailyPrizes.remove(keys.get(i));
+            map.remove(keys.get(i));
         }
     }
 
@@ -182,6 +226,7 @@ public final class PlayerData {
         poolPrizes.clear();
         prizeCounts.clear();
         dailyPrizes.clear();
+        dailyDraws.clear();
         history.clear();
     }
 

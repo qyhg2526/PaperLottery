@@ -3,7 +3,7 @@ plugins {
 }
 
 group = "cn.dsh.lottery"
-version = "1.0.1"
+version = "1.1.0"
 
 java {
     // Paper 26.2 的 API 以 Java 25（class 文件版本 69）编译，

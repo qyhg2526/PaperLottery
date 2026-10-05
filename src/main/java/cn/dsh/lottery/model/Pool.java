@@ -24,6 +24,7 @@ import java.util.Map;
  * @param tenPullRarity   连抽（≥2 次）时至少保证的品质（可空）
  * @param guaranteeCount  连抽中保底品质的最低数量
  * @param pityRules     保底规则
+ * @param dailyDrawLimit 每名玩家每日抽奖次数上限（-1 或 0 表示不限）
  * @param prizes        奖品列表
  */
 public record Pool(
@@ -43,6 +44,7 @@ public record Pool(
         String tenPullRarity,
         int guaranteeCount,
         List<PityRule> pityRules,
+        int dailyDrawLimit,
         List<Prize> prizes
 ) {
 
@@ -77,6 +79,11 @@ public record Pool(
     /** 本次抽奖的总价。 */
     public double totalCost(int amount) {
         return costPerDraw(amount) * Math.max(1, amount);
+    }
+
+    /** 本卡池是否设置了每日抽奖次数上限。 */
+    public boolean hasDailyDrawLimit() {
+        return dailyDrawLimit > 0;
     }
 
     /** 该卡池可用的连抽选项（只保留有奖品的合法值）。 */

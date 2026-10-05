@@ -50,6 +50,8 @@ public final class Messages {
         public static final String DRAW_EMPTY = "draw.empty";
         public static final String DRAW_LIMITED = "draw.limited";
         public static final String BAG_FULL = "draw.bag-full";
+        public static final String DAILY_LIMIT_REACHED = "draw.daily-limit-reached";
+        public static final String DAILY_LIMIT_PARTIAL = "draw.daily-limit-partial";
         public static final String PITY_TRIGGERED = "draw.pity-triggered";
         public static final String LUCKY = "draw.lucky";
         public static final String GIVE_SELF = "admin.give-self";
@@ -259,6 +261,11 @@ public final class Messages {
             put(K.DRAW_EMPTY, "<yellow>本次没有可抽取的奖品（可能已全部达到上限）。");
             put(K.DRAW_LIMITED, "<gray>部分奖品已达上限，本次仅发放 <white>%count%<gray> 件。");
             put(K.BAG_FULL, "<yellow>背包空间不足，<white>%dropped%<yellow> 件奖品已掉落在你脚下。");
+            put(K.DAILY_LIMIT_REACHED, "<red>今日抽奖次数已用尽：<yellow>%used%<red>/<yellow>%limit%<red>。"
+                    + "每日重置时区：<gray>%zone%<red>，明天再来吧。");
+            put(K.DAILY_LIMIT_PARTIAL, "<red>今日剩余次数不足：本次需要 <yellow>%amount%<red> 次，"
+                    + "但今天只剩 <yellow>%remaining%<red> 次（<gray>%used%/%limit%<red>）。");
+            put("dialog.daily-limit-line", "<gray>今日次数：<white>%used%<gray>/<white>%limit% <dark_gray>(剩余 %remaining%)");
             put(K.PITY_TRIGGERED, "<gold>✨ 保底触发！<yellow>%rarity_name%<gold> 品质必得！");
             put("dialog.pity-ready", " <gold>【已就绪】");
             put("dialog.pity-will-guarantee", "<gold>　　下一次抽取必得该品质或更高");

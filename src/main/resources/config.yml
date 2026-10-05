@@ -37,6 +37,11 @@ settings:
   drop-when-full: true
   # 每名玩家保留的流水条数
   history-limit: 50
+  # 「每日」判定所用的时区（影响每日抽奖上限、每日限额奖品的重置时间）
+  #   local         跟随服务器系统时区
+  #   UTC           国际标准时间（跨时区运营推荐，全球统一重置）
+  #   Asia/Shanghai 指定时区，可写任意 ZoneId
+  daily-draw-reset-zone: local
   # 调试日志
   debug: false
 
@@ -205,6 +210,8 @@ messages:
     failed: "<red>抽奖过程中出现异常，已取消本次消耗。"
     empty: "<yellow>本次没有可抽取的奖品（可能已全部达到上限）。"
     success: "<green>抽奖完成！消耗 <yellow>%cost% %currency%<green>，获得：%summary%"
+    daily-limit-reached: "<red>今日抽奖次数已用尽：<yellow>%used%<red>/<yellow>%limit%<red>。每日重置时区：<gray>%zone%<red>，明天再来吧。"
+    daily-limit-partial: "<red>今日剩余次数不足：本次需要 <yellow>%amount%<red> 次，但今天只剩 <yellow>%remaining%<red> 次（<gray>%used%/%limit%<red>）。"
     bag-full: "<yellow>背包空间不足，<white>%dropped%<yellow> 件奖品已掉落在你脚下。"
     pity-triggered: "<gold>✨ 保底触发！<yellow>%rarity_name%<gold> 品质必得！"
     lucky: "<gold>✨ 欧皇时刻！一发入魂 <yellow>%prize_name%<gold>！"
@@ -238,6 +245,11 @@ messages:
     cost-line: "<gray>本次消耗：<white>%cost_text%"
     result-line: "<gray>上次结果：%result%"
     locked: "<red>✖ 你当前不满足该卡池的参与条件。"
+    daily-limit-line: "<gray>今日次数：<white>%used%<gray>/<white>%limit% <dark_gray>(剩余 %remaining%)"
+    daily-limit-bypass: " <green>[已绕过]"
+    daily-limit-exhausted: "<red>✖ 今日抽奖次数已用尽（<yellow>%used%<red>/<yellow>%limit%<red>），明天再来。"
+    button-draw-limited: "<red>今日次数已用尽"
+    button-draw-limited-tooltip: "<gray>今日剩余 %remaining% 次，明天再来"
     currency-unavailable: "<red>✖ 该卡池的货币 <yellow>%currency%<red> 当前不可用，请联系管理员。"
     unaffordable: "<red>✖ 余额不足，无法抽奖。"
     pity-header: "<dark_gray>—— 保底进度 ——"

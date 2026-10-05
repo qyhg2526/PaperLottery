@@ -108,6 +108,27 @@ public final class LotteryService {
             // 上一次抽奖的动画还没播完，避免叠加界面与重复扣费
             return new Outcome.Failure(Messages.K.BUSY, baseCtx);
         }
+
+        // 每日抽奖次数上限（管理权限可绕过）
+        if (pool.hasDailyDrawLimit() && !player.hasPermission("paperlottery.limit.bypass")) {
+            PlayerData data = ctx.data().get(player.getUniqueId(), player.getName());
+            java.time.ZoneId zone = settings.dailyResetZone();
+            int used = data.dailyDraws(pool.id(), zone);
+            int limit = pool.dailyDrawLimit();
+            PlaceholderContext limitCtx = baseCtx
+                    .num("limit", limit)
+                    .num("used", used)
+                    .num("remaining", Math.max(0, limit - used))
+                    .num("amount", draws)
+                    .raw("zone", zone.getId());
+            if (used >= limit) {
+                return new Outcome.Failure(Messages.K.DAILY_LIMIT_REACHED, limitCtx);
+            }
+            if (used + draws > limit) {
+                // 剩余次数不足以完成本次连抽：整体拒绝，避免「扣费了但只发一部分」
+                return new Outcome.Failure(Messages.K.DAILY_LIMIT_PARTIAL, limitCtx);
+            }
+        }
         long now = System.currentTimeMillis();
         long until = cooldownUntil.getOrDefault(player.getUniqueId(), 0L);
         if (until > now) {
@@ -211,6 +232,8 @@ public final class LotteryService {
                     && cheapestWeight <= minWeight(player, pool, data);
 
             data.addTotal(pool.id(), draws);
+            // 记录今日抽奖次数，用于每日上限判定
+            data.addDailyDraws(pool.id(), draws, settings.dailyResetZone());
             data.addHistory(new PullRecord(System.currentTimeMillis(), pool.id(), draws, currency.id(), chargedAmount,
                     RewardApplier.summaryForStorage(unique, counts)), settings.historyLimit());
             ctx.data().markDirty();
@@ -353,6 +376,7 @@ public final class LotteryService {
 
     /** 当前可参与轮盘的奖品（满足条件且未达上限）。 */
     private List<Prize> available(Player player, Pool pool, PlayerData data) {
+        java.time.ZoneId zone = ctx.settings().dailyResetZone();
         List<Prize> list = new ArrayList<>();
         for (Prize prize : pool.prizes()) {
             if (!prize.test(player)) {
@@ -361,7 +385,7 @@ public final class LotteryService {
             boolean ok = prize.available(
                     ctx.data()::globalCount,
                     data::prizeCount,
-                    data::dailyCount
+                    prizeId -> data.dailyCount(prizeId, zone)
             );
             if (ok) {
                 list.add(prize);
@@ -412,7 +436,7 @@ public final class LotteryService {
     private void registerWin(Pool pool, PlayerData data, Prize prize) {
         PityEngine.applyWin(pool, data, prize);
         data.addPrizeCount(pool.id(), prize.id(), 1);
-        data.addDailyCount(prize.id(), 1);
+        data.addDailyCount(prize.id(), 1, ctx.settings().dailyResetZone());
         ctx.data().addGlobalCount(prize.id(), 1);
     }
 
@@ -575,6 +599,58 @@ public final class LotteryService {
         public int remaining() {
             return Math.max(0, threshold - current);
         }
+    }
+
+    /**
+     * 每日抽奖次数进度，供界面展示。
+     *
+     * @param limited    该卡池是否设置了上限
+     * @param used       今日已用次数
+     * @param limit      上限
+     * @param remaining  今日剩余次数
+     * @param bypass     该玩家是否拥有绕过权限
+     * @param resetZone  重置所用时区 ID
+     */
+    public record DailyProgress(boolean limited, int used, int limit, int remaining,
+                                boolean bypass, String resetZone) {
+
+        /** 剩余比例 0~1，用于进度条。 */
+        public double ratio() {
+            return limit <= 0 ? 1.0D : Math.max(0.0D, Math.min(1.0D, (double) remaining / limit));
+        }
+
+        /** 是否已经用尽。 */
+        public boolean exhausted() {
+            return limited && !bypass && remaining <= 0;
+        }
+    }
+
+    /** 取玩家在某卡池的每日抽奖进度。 */
+    public DailyProgress dailyProgress(Player player, Pool pool) {
+        if (player == null || pool == null) {
+            return new DailyProgress(false, 0, -1, Integer.MAX_VALUE, false, "");
+        }
+        java.time.ZoneId zone = ctx.settings().dailyResetZone();
+        boolean bypass = player.hasPermission("paperlottery.limit.bypass");
+        if (!pool.hasDailyDrawLimit()) {
+            PlayerData data = ctx.data().get(player.getUniqueId(), player.getName());
+            return new DailyProgress(false, data.dailyDraws(pool.id(), zone), -1,
+                    Integer.MAX_VALUE, bypass, zone.getId());
+        }
+        PlayerData data = ctx.data().get(player.getUniqueId(), player.getName());
+        int used = data.dailyDraws(pool.id(), zone);
+        int limit = pool.dailyDrawLimit();
+        return new DailyProgress(true, used, limit, Math.max(0, limit - used), bypass, zone.getId());
+    }
+
+    /** 管理命令：清零某玩家今日在某卡池的抽奖次数。 */
+    public void resetDailyDraws(Player player, Pool pool) {
+        if (player == null || pool == null) {
+            return;
+        }
+        PlayerData data = ctx.data().get(player.getUniqueId(), player.getName());
+        data.resetDailyDraws(pool.id(), ctx.settings().dailyResetZone());
+        ctx.data().markDirty();
     }
 
     /** 抽奖结果。 */

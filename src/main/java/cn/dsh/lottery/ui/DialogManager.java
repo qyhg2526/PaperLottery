@@ -135,9 +135,26 @@ public final class DialogManager {
                     .replace("%total%", String.valueOf(pity.getFirst().totalPulls()))));
         }
 
+        // 每日抽奖次数上限
+        LotteryService.DailyProgress daily = ctx.service().dailyProgress(player, pool);
+        if (daily.limited()) {
+            lines.add(Text.mm(messages.raw("dialog.daily-limit-line",
+                            "<gray>今日次数：<white>%used%<gray>/<white>%limit% <dark_gray>(剩余 %remaining%)")
+                    .replace("%used%", String.valueOf(daily.used()))
+                    .replace("%limit%", String.valueOf(daily.limit()))
+                    .replace("%remaining%", String.valueOf(daily.remaining()))
+                    + (daily.bypass() ? messages.raw("dialog.daily-limit-bypass", " <green>[已绕过]") : "")));
+        }
+
         if (!usable) {
             lines.add(Component.empty());
             lines.add(Text.mm(messages.raw("dialog.locked", "<red>✖ 你当前不满足该卡池的参与条件。")));
+        } else if (daily.exhausted()) {
+            lines.add(Component.empty());
+            lines.add(Text.mm(messages.raw("dialog.daily-limit-exhausted",
+                            "<red>✖ 今日抽奖次数已用尽（<yellow>%used%<red>/<yellow>%limit%<red>），明天再来。")
+                    .replace("%used%", String.valueOf(daily.used()))
+                    .replace("%limit%", String.valueOf(daily.limit()))));
         } else if (!currencyReady) {
             lines.add(Component.empty());
             lines.add(Text.mm(messages.raw("dialog.currency-unavailable",
@@ -173,10 +190,17 @@ public final class DialogManager {
 
         // ---- 按钮 ----
         List<ActionButton> buttons = new ArrayList<>();
-        Component drawLabel = Text.mm(messages.raw("dialog.button-draw", "<gold>开始抽奖 <gray>(%cost_text%)")
-                .replace("%cost_text%", ctx.currencies().format(currency, cost)));
-        Component drawTooltip = Text.mm(messages.raw("dialog.button-draw-tooltip",
-                "<gray>点击后按下拉框选择的次数进行抽奖"));
+        boolean blockedByDailyLimit = daily.exhausted();
+        Component drawLabel = blockedByDailyLimit
+                ? Text.mm(messages.raw("dialog.button-draw-limited", "<red>今日次数已用尽"))
+                : Text.mm(messages.raw("dialog.button-draw", "<gold>开始抽奖 <gray>(%cost_text%)")
+                        .replace("%cost_text%", ctx.currencies().format(currency, cost)));
+        Component drawTooltip = blockedByDailyLimit
+                ? Text.mm(messages.raw("dialog.button-draw-limited-tooltip",
+                        "<gray>今日剩余 %remaining% 次，明天再来")
+                        .replace("%remaining%", String.valueOf(daily.remaining())))
+                : Text.mm(messages.raw("dialog.button-draw-tooltip",
+                        "<gray>点击后按下拉框选择的次数进行抽奖"));
         buttons.add(DialogUtil.callbackButton(drawLabel, drawTooltip, 150, (clicker, response) -> {
             String poolId = DialogUtil.readText(response, KEY_POOL, pool.id());
             int draws = DialogUtil.readInt(response, KEY_AMOUNT, amount);
@@ -460,6 +484,14 @@ public final class DialogManager {
                     ctx.data().get(clicker.getUniqueId(), clicker.getName()).resetPool(pool.id());
                     ctx.data().markDirty();
                     Text.send(clicker, "<green>已重置卡池 " + pool.id() + " 的保底计数。");
+                    openAdmin(clicker, pool);
+                }));
+        buttons.add(DialogUtil.callbackButton(
+                Text.mm("<yellow>重置今日次数"),
+                Text.mm("<gray>清零当前卡池今天的抽奖次数"),
+                100, (clicker, response) -> {
+                    ctx.service().resetDailyDraws(clicker, pool);
+                    Text.send(clicker, "<green>已清零卡池 " + pool.id() + " 今日的抽奖次数。");
                     openAdmin(clicker, pool);
                 }));
         buttons.add(DialogUtil.callbackButton(

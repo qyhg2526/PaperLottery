@@ -215,6 +215,8 @@ public final class LotteryConfig {
                 emptyToNull(section.getString("ten-pull-rarity", "")),
                 Math.max(1, section.getInt("guarantee-count", 1)),
                 pityRules,
+                // 每名玩家每日抽奖次数上限；-1 或不写表示不限
+                section.getInt("daily-draw-limit", -1),
                 prizes
         );
     }
@@ -271,6 +273,22 @@ public final class LotteryConfig {
         }
         int min = section.getInt("amount-min", section.getInt("amount", 1));
         int max = section.getInt("amount-max", section.getInt("amount", min));
+        String skullOwner = section.getString("skull-owner", "");
+        String skullUuid = section.getString("skull-uuid", "");
+        // 纹理值很长，YAML 折行会引入空白与换行，这里统一去掉
+        String skullTexture = section.getString("skull-texture", "").replaceAll("\\s", "");
+        String skullSignature = section.getString("skull-signature", "").replaceAll("\\s", "");
+        if (material == Material.PLAYER_HEAD) {
+            if (skullTexture.isEmpty() && skullOwner.isBlank() && skullUuid.isBlank()) {
+                plugin.getLogger().warning("奖品 " + section.getCurrentPath()
+                        + " 使用 PLAYER_HEAD 但未配置 skull-texture / skull-uuid / skull-owner，"
+                        + "将得到无皮肤的空白头颅。");
+            } else if (skullTexture.isEmpty() && !skullOwner.isBlank()) {
+                plugin.getLogger().info("奖品 " + section.getCurrentPath()
+                        + " 未直接指定皮肤纹理，将尝试通过玩家缓存解析；"
+                        + "若玩家从未在本服上线，建议改用 skull-texture 直接写入纹理。");
+            }
+        }
         return new Prize.ItemSpec(
                 material,
                 Math.max(1, min),
@@ -280,7 +298,11 @@ public final class LotteryConfig {
                 section.getStringList("enchants"),
                 section.isSet("model-data") ? section.getInt("model-data") : null,
                 section.getBoolean("unbreakable", false),
-                section.getBoolean("glow", false)
+                section.getBoolean("glow", false),
+                skullOwner.isBlank() ? null : skullOwner,
+                skullUuid.isBlank() ? null : skullUuid,
+                skullTexture.isEmpty() ? null : skullTexture,
+                skullSignature.isEmpty() ? null : skullSignature
         );
     }
 

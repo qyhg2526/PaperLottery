@@ -1,372 +1,441 @@
 # ==========================================================================
-#  PaperLottery 奖励配置（卡池 / 奖品）
+#  PaperLottery 奖励配置 —— 测试卡池
 #  ------------------------------------------------------------------------
-#  这个文件专门用来改抽奖奖励，改完执行 /lottery reload 即可生效，无需重启。
-#  提示文案与动画在 config.yml，品质与货币定义也在 config.yml。
+#  本文件只配置了 1 个卡池：id = test，显示名「测试卡池」
+#    · 单抽      10000 金币
+#    · 十连抽    99900 金币
+#    · 货币      vault（Vault 主经济，需安装 Vault + 任意经济插件）
 #
-#  ── 卡池结构 ────────────────────────────────────────────────────────────
-#  pools:
-#    <卡池ID>:                      # 英文 ID，玩家看不到；命令中用它指定卡池
-#      display-name: "<gold>卡池名"  # 玩家看到的卡池名（支持 MiniMessage）
-#      icon: CHEST                  # 保留字段
-#      description: [...]           # 对话框里的卡池介绍（可写多行）
-#      currency: vault              # 消耗的货币 ID（见 config.yml 的 currencies）
-#      cost:                        # 价格；default 为单次价，也可为不同连抽单独定价
-#        default: 500
-#        10: 4500
-#      amounts: [1, 5, 10]          # 该卡池允许的连抽次数
-#      permission: ""               # 需要的权限，留空表示人人可用
-#      guarantee-rarity: uncommon   # 每次至少保证的品质
-#      ten-pull-rarity: rare        # 连抽（≥2 次）至少保证的品质
-#      announce-rarities: [legendary]  # 抽到这些品质时全服播报
-#      pity:                        # 保底：连续 threshold 次没出该品质，下一次必出
-#        - rarity: epic
-#          threshold: 30
-#          reset-on-hit: true
-#      prizes:                      # 奖品列表
-#        <奖品ID>: { ... }
+#  改完执行 /lottery reload 立即生效，无需重启。
 #
-#  ── 单个奖品可用的字段 ──────────────────────────────────────────────────
-#  display-name: "<gold>奖品名"    # 玩家看到的名字（支持占位符与 MiniMessage）
-#  rarity: legendary              # 品质 ID，必须存在于 config.yml 的 rarities
-#  weight: 3                      # 权重：越大越容易抽中（概率 = 本权重 / 总权重）
-#  bonus-weight: 0                # 固定权重加成（可选）
+#  ── 权重与概率 ──────────────────────────────────────────────────────────
+#  weight 越大越容易抽中，概率 = 本奖品权重 ÷ 当前可用奖品权重之和。
+#  下方每条注释里的百分比，是按「全部奖品均可用」算出的参考值（总权重 2587）。
 #
-#  item:                          # ① 物品奖励（可以只写 material 与 amount）
-#    material: DIAMOND            #    材质名，如 DIAMOND / NETHERITE_SWORD
-#    amount: 5                    #    固定数量
-#    amount-min: 2                #    或写数量区间（与 amount 二选一）
-#    amount-max: 5
-#    name: "<aqua>自定义名字"      #    可选：覆盖物品显示名
-#    lore: ["<gray>第一行"]        #    可选：物品描述
-#    enchants: ["sharpness:7"]    #    可选：附魔，格式 名称:等级
-#    model-data: 1001             #    可选：自定义模型数据
-#    unbreakable: true            #    可选：无法破坏
-#    glow: true                   #    可选：附魔光效
-#
-#  currency:                      # ② 货币奖励（可与 item 同时存在）
-#    id: vault                    #    发放的货币 ID
-#    min: 200                     #    随机区间
-#    max: 800
-#
-#  commands:                      # ③ 命令奖励（以控制台身份执行）
-#    - "console:say %player% 中奖了"
-#    - "player:me 我中奖了"        #    player: 前缀表示以玩家身份执行
-#
-#  limit: 5                       # 全服累计上限（-1 或不写表示不限）
-#  player-limit: 1                # 单名玩家累计上限
-#  daily-limit: 1                 # 单名玩家每日上限
-#
-#  conditions:                    # 抽取条件（可选）
-#    permission: [server.vip]
-#    permission-any: [a.perm, b.perm]
-#    permission-multiplier: ["server.mvp:1.5"]
-#    placeholder: ["%player_world%:world"]
-#    placeholder-min: ["%player_level%:30"]
-#    worlds: [world, world_nether]
-#
-#  ── 复制粘贴模板 ────────────────────────────────────────────────────────
-#      my_prize:
-#        display-name: "<gold>我的奖品"
-#        rarity: rare
-#        weight: 50
-#        item:
-#          material: DIAMOND
-#          amount: 8
+#  分级概率：普通 54.50% | 优秀 23.97% | 稀有 13.53% | 史诗 3.59% | 传说 4.41%
 # ==========================================================================
 
 pools:
-  # ========================================================================
-  # 入门卡池：消耗金币
-  # ========================================================================
-  normal:
-    display-name: "<gradient:#8ecae6:#219ebc><bold>普通卡池"
+  test:
+    display-name: "<gradient:#f9c74f:#f9844a><bold>测试卡池"
     icon: CHEST
     description:
-      - "<gray>服务器入门卡池，人人都能参与。"
-      - "<gray>消耗 <white>%currency%<gray> 抽取随机奖励。"
+      - "<gray>单抽 <white>10000 <gray>金币，十连 <white>99900 <gray>金币。"
+      - "<gray>从腐肉到鞘翅，运气好还能抽到 <gold>传说<gray> 级大奖。"
     currency: vault
     cost:
-      default: 500
-      10: 4500
+      default: 10000
+      10: 99900
     amounts: [1, 5, 10]
     permission: ""
+    # ── 每日抽奖次数上限 ────────────────────────────────────────────────
+    # 每名玩家每天在该卡池最多能抽多少次（按 config.yml 的
+    # daily-draw-reset-zone 判定「每天」，默认跟随服务器时区）。
+    # -1 或不写表示不限。拥有 paperlottery.limit.bypass 权限的玩家不受限制。
+    daily-draw-limit: 100
+    # 每次至少保证「优秀」以上，避免十连全是腐肉
     guarantee-rarity: uncommon
+    # 连抽至少保证「稀有」以上
     ten-pull-rarity: rare
+    # 抽到传说级时全服播报
     announce-rarities: [legendary]
+    # 保底：20 抽没出稀有 -> 下一次必出稀有或更高
+    #       150 抽没出传说 -> 下一次必出传说
     pity:
-      - rarity: epic
-        threshold: 30
-        reset-on-hit: true
-      - rarity: legendary
-        threshold: 90
-        reset-on-hit: true
-    prizes:
-      # ---------------- 普通 ----------------
-      bread:
-        display-name: "<gray>面包"
-        rarity: common
-        weight: 400
-        item:
-          material: BREAD
-          amount: 8
-      iron_ingot:
-        display-name: "<gray>铁锭"
-        rarity: common
-        weight: 380
-        item:
-          material: IRON_INGOT
-          amount-min: 8
-          amount-max: 16
-      exp_bottle:
-        display-name: "<gray>附魔之瓶"
-        rarity: common
-        weight: 320
-        item:
-          material: EXPERIENCE_BOTTLE
-          amount: 16
-      # ---------------- 优秀 ----------------
-      gold_ingot:
-        display-name: "<green>金锭"
-        rarity: uncommon
-        weight: 200
-        item:
-          material: GOLD_INGOT
-          amount-min: 8
-          amount-max: 16
-      coins_small:
-        display-name: "<green>金币红包"
-        rarity: uncommon
-        weight: 180
-        currency:
-          id: vault
-          min: 200
-          max: 800
-      arrows:
-        display-name: "<green>箭矢"
-        rarity: uncommon
-        weight: 160
-        item:
-          material: ARROW
-          amount: 64
-      # ---------------- 稀有 ----------------
-      diamond:
-        display-name: "<blue>钻石"
-        rarity: rare
-        weight: 70
-        item:
-          material: DIAMOND
-          amount-min: 2
-          amount-max: 5
-      xp_levels:
-        display-name: "<blue>经验等级券"
-        rarity: rare
-        weight: 60
-        currency:
-          id: xp
-          min: 5
-          max: 15
-      # ---------------- 史诗 ----------------
-      netherite_scrap:
-        display-name: "<light_purple>下界合金碎片"
-        rarity: epic
-        weight: 18
-        item:
-          material: NETHERITE_SCRAP
-          amount-min: 1
-          amount-max: 2
-          glow: true
-      coins_big:
-        display-name: "<light_purple>金币大礼包"
-        rarity: epic
-        weight: 12
-        currency:
-          id: vault
-          min: 2000
-          max: 6000
-      # ---------------- 传说 ----------------
-      netherite_sword:
-        display-name: "<gold>传说之剑"
-        rarity: legendary
-        weight: 3
-        # 全服限量 5 把，抽完自动从轮盘移除
-        limit: 5
-        item:
-          material: NETHERITE_SWORD
-          amount: 1
-          name: "<gold>传说之剑 <dark_gray>· <yellow>弑神"
-          lore:
-            - "<gray>从普通卡池中诞生的神器。"
-            - "<dark_gray>持有者：%player%"
-          enchants:
-            - "sharpness:7"
-            - "unbreaking:5"
-            - "mending:1"
-          unbreakable: true
-          glow: true
-        commands:
-          - "console:say %player% 抽到了传说之剑！"
-      dragon_egg:
-        display-name: "<gold>龙蛋"
-        rarity: legendary
-        weight: 1
-        # 每名玩家最多抽到 1 次
-        player-limit: 1
-        item:
-          material: DRAGON_EGG
-          amount: 1
-          glow: true
-
-  # ========================================================================
-  # 高级卡池：消耗点券（Vault 多货币账户）
-  # ========================================================================
-  premium:
-    display-name: "<gradient:#ffd166:#ef476f><bold>高级卡池"
-    icon: ENDER_CHEST
-    description:
-      - "<gray>使用 <aqua>点券 <gray>抽取高价值奖励。"
-      - "<red>每日限量，先到先得。"
-    currency: points
-    cost:
-      default: 10
-    amounts: [1, 5]
-    permission: paperlottery.pool.premium
-    guarantee-rarity: rare
-    announce-rarities: [epic, legendary]
-    pity:
-      - rarity: legendary
+      - rarity: rare
         threshold: 50
         reset-on-hit: true
+      - rarity: legendary
+        threshold: 150
+        reset-on-hit: true
+
     prizes:
-      diamond_block:
-        display-name: "<blue>钻石块"
-        rarity: rare
-        weight: 100
+      # ==================================================================
+      #  普通 common —— 基础补给         合计 1410 / 2587 = 54.50%
+      # ==================================================================
+      rotten_flesh:
+        display-name: "<gray>腐肉"
+        rarity: common
+        weight: 520
         item:
-          material: DIAMOND_BLOCK
+          material: ROTTEN_FLESH
+          amount-min: 16
+          amount-max: 32
+          lore:
+            - "<dark_gray>虽然不太好吃，但至少能吃。"
+      bread:                                   # 18.03%
+        display-name: "<gray>面包"
+        rarity: common
+        weight: 470
+        item:
+          material: BREAD
+          amount-min: 16
+          amount-max: 32
+      apple:                                   # 16.11%
+        display-name: "<gray>苹果"
+        rarity: common
+        weight: 420
+        item:
+          material: APPLE
+          amount-min: 12
+          amount-max: 24
+
+      # ==================================================================
+      #  优秀 uncommon —— 实用资源        合计 620 / 2587 = 23.97%
+      # ==================================================================
+      iron_ingot:                              # 12.27%
+        display-name: "<green>铁锭"
+        rarity: uncommon
+        weight: 320
+        item:
+          material: IRON_INGOT
+          amount-min: 16
+          amount-max: 32
+      wayfinder_template:                      # 3.07%
+        display-name: "<green>向导盔甲纹饰"
+        rarity: uncommon
+        weight: 80
+        item:
+          material: WAYFINDER_ARMOR_TRIM_SMITHING_TEMPLATE
           amount: 1
-      emerald_block:
-        display-name: "<green>绿宝石块"
-        rarity: rare
-        weight: 100
+      sentry_template:                         # 3.07%
+        display-name: "<green>哨兵盔甲纹饰"
+        rarity: uncommon
+        weight: 80
         item:
-          material: EMERALD_BLOCK
+          material: SENTRY_ARMOR_TRIM_SMITHING_TEMPLATE
           amount: 1
-      elytra:
-        display-name: "<light_purple>鞘翅"
-        rarity: epic
-        weight: 15
-        # 每人每天最多 1 个
-        daily-limit: 1
+      tide_template:                           # 2.69%
+        display-name: "<green>潮汐盔甲纹饰"
+        rarity: uncommon
+        weight: 70
         item:
-          material: ELYTRA
+          material: TIDE_ARMOR_TRIM_SMITHING_TEMPLATE
+          amount: 1
+      rib_template:                            # 2.69%
+        display-name: "<green>肋骨盔甲纹饰"
+        rarity: uncommon
+        weight: 70
+        item:
+          material: RIB_ARMOR_TRIM_SMITHING_TEMPLATE
+          amount: 1
+
+      # ==================================================================
+      #  稀有 rare —— 高价值资源与礼包     合计 350 / 2587 = 13.53%
+      # ==================================================================
+      gold_ingot:                              # 5.75%
+        display-name: "<blue>金锭"
+        rarity: rare
+        weight: 150
+        item:
+          material: GOLD_INGOT
+          amount-min: 24
+          amount-max: 48
+      netherite_upgrade_template:              # 3.45%
+        display-name: "<blue>下界合金升级模板"
+        rarity: rare
+        weight: 90
+        item:
+          material: NETHERITE_UPGRADE_SMITHING_TEMPLATE
           amount: 1
           glow: true
-      beacon:
-        display-name: "<light_purple>信标"
+      xp_bundle:                               # 2.69%
+        display-name: "<blue>经验礼包"
+        rarity: rare
+        weight: 70
+        # 直接发放经验等级，随机区间由 min / max 决定
+        currency:
+          id: xp
+          min: 30
+          max: 60
+      coins_small:                             # 1.53%
+        display-name: "<blue>金币礼包 <dark_gray>(小)"
+        rarity: rare
+        weight: 40
+        # 单抽成本 10000，这一档属于「回血」
+        currency:
+          id: vault
+          min: 15000
+          max: 45000
+
+      # ==================================================================
+      #  史诗 epic —— 值得期待的奖励       合计 93 / 2587 = 3.59%
+      # ==================================================================
+      silence_template:                        # 1.53%
+        display-name: "<light_purple>幽静盔甲纹饰"
+        rarity: epic
+        weight: 40
+        item:
+          material: SILENCE_ARMOR_TRIM_SMITHING_TEMPLATE
+          amount: 1
+          glow: true
+      netherite_scrap:                         # 1.27%
+        display-name: "<light_purple>下界合金碎片"
+        rarity: epic
+        weight: 33
+        item:
+          material: NETHERITE_SCRAP
+          amount-min: 2
+          amount-max: 4
+          glow: true
+      coins_big:                               # 0.77%
+        display-name: "<light_purple>金币礼包 <dark_gray>(大)"
         rarity: epic
         weight: 20
-        item:
-          material: BEACON
-          amount: 1
-      enchanted_golden_apple:
-        display-name: "<gold>附魔金苹果"
+        # 单抽成本 10000，这一档开始明显赚
+        currency:
+          id: vault
+          min: 60000
+          max: 150000
+
+      # ==================================================================
+      #  传说 legendary —— 大奖，抽到会全服播报
+      #  合计 114 / 2587 = 4.41%
+      #
+      #  22 张音乐唱片各占 4 权重（合计 88，占 3.40%），
+      #  每张唱片的单独概率约 0.153% —— 「随机唱片」由权重抽取天然实现。
+      # ==================================================================
+      disc_13:
+        display-name: "<gold>音乐唱片 - 13"
         rarity: legendary
         weight: 4
         item:
-          material: ENCHANTED_GOLDEN_APPLE
-          amount-min: 1
-          amount-max: 3
-          glow: true
-
-  # ========================================================================
-  # 钻石卡池：完全免费，使用钻石物品作为货币（无需任何经济插件）
-  # ========================================================================
-  diamond:
-    display-name: "<aqua><bold>钻石卡池"
-    icon: DIAMOND
-    description:
-      - "<gray>使用 <aqua>钻石 <gray>抽取，无需任何经济插件。"
-    currency: diamond
-    cost:
-      default: 5
-      10: 45
-    amounts: [1, 5, 10]
-    announce-rarities: [legendary]
-    prizes:
-      coal:
-        display-name: "<gray>煤炭"
-        rarity: common
-        weight: 500
-        item:
-          material: COAL
-          amount: 16
-      iron_block:
-        display-name: "<green>铁块"
-        rarity: uncommon
-        weight: 250
-        item:
-          material: IRON_BLOCK
-          amount: 4
-      diamonds:
-        display-name: "<blue>钻石"
-        rarity: rare
-        weight: 80
-        item:
-          material: DIAMOND
-          amount-min: 3
-          amount-max: 8
-      totem:
-        display-name: "<gold>不死图腾"
-        rarity: legendary
-        weight: 5
-        item:
-          material: TOTEM_OF_UNDYING
+          material: MUSIC_DISC_13
           amount: 1
           glow: true
 
-  # ========================================================================
-  # 示例：经验卡池（原版经验等级作为货币，零依赖）
-  # 需要时把下面整段前面的注释去掉即可启用
-  # ========================================================================
-  # xp_pool:
-  #   display-name: "<green><bold>经验卡池"
-  #   icon: EXPERIENCE_BOTTLE
-  #   description:
-  #     - "<gray>用经验等级换取装备与素材。"
-  #   currency: xp
-  #   cost:
-  #     default: 3
-  #   amounts: [1, 5]
-  #   prizes:
-  #     stone:
-  #       display-name: "<gray>圆石"
-  #       rarity: common
-  #       weight: 400
-  #       item:
-  #         material: COBBLESTONE
-  #         amount: 32
-  #     iron_pickaxe:
-  #       display-name: "<green>铁镐"
-  #       rarity: uncommon
-  #       weight: 150
-  #       item:
-  #         material: IRON_PICKAXE
-  #         amount: 1
-  #         enchants: ["efficiency:3", "unbreaking:2"]
-  #     diamond_chestplate:
-  #       display-name: "<blue>钻石胸甲"
-  #       rarity: rare
-  #       weight: 40
-  #       item:
-  #         material: DIAMOND_CHESTPLATE
-  #         amount: 1
-  #         enchants: ["protection:4"]
-  #     enchanted_book:
-  #       display-name: "<gold>经验修补之书"
-  #       rarity: legendary
-  #       weight: 5
-  #       item:
-  #         material: ENCHANTED_BOOK
-  #         amount: 1
-  #         glow: true
+      disc_cat:
+        display-name: "<gold>音乐唱片 - 猫"
+        rarity: legendary
+        weight: 4
+        item:
+          material: MUSIC_DISC_CAT
+          amount: 1
+          glow: true
+
+      disc_blocks:
+        display-name: "<gold>音乐唱片 - 方块"
+        rarity: legendary
+        weight: 4
+        item:
+          material: MUSIC_DISC_BLOCKS
+          amount: 1
+          glow: true
+
+      disc_chirp:
+        display-name: "<gold>音乐唱片 - 啁啾"
+        rarity: legendary
+        weight: 4
+        item:
+          material: MUSIC_DISC_CHIRP
+          amount: 1
+          glow: true
+
+      disc_far:
+        display-name: "<gold>音乐唱片 - 远方"
+        rarity: legendary
+        weight: 4
+        item:
+          material: MUSIC_DISC_FAR
+          amount: 1
+          glow: true
+
+      disc_mall:
+        display-name: "<gold>音乐唱片 - 商场"
+        rarity: legendary
+        weight: 4
+        item:
+          material: MUSIC_DISC_MALL
+          amount: 1
+          glow: true
+
+      disc_mellohi:
+        display-name: "<gold>音乐唱片 - Mellohi"
+        rarity: legendary
+        weight: 4
+        item:
+          material: MUSIC_DISC_MELLOHI
+          amount: 1
+          glow: true
+
+      disc_stal:
+        display-name: "<gold>音乐唱片 - Stal"
+        rarity: legendary
+        weight: 4
+        item:
+          material: MUSIC_DISC_STAL
+          amount: 1
+          glow: true
+
+      disc_strad:
+        display-name: "<gold>音乐唱片 - Strad"
+        rarity: legendary
+        weight: 4
+        item:
+          material: MUSIC_DISC_STRAD
+          amount: 1
+          glow: true
+
+      disc_ward:
+        display-name: "<gold>音乐唱片 - 守卫者"
+        rarity: legendary
+        weight: 4
+        item:
+          material: MUSIC_DISC_WARD
+          amount: 1
+          glow: true
+
+      disc_11:
+        display-name: "<gold>音乐唱片 - 11"
+        rarity: legendary
+        weight: 4
+        item:
+          material: MUSIC_DISC_11
+          amount: 1
+          glow: true
+
+      disc_wait:
+        display-name: "<gold>音乐唱片 - 等待"
+        rarity: legendary
+        weight: 4
+        item:
+          material: MUSIC_DISC_WAIT
+          amount: 1
+          glow: true
+
+      disc_otherside:
+        display-name: "<gold>音乐唱片 - 彼方"
+        rarity: legendary
+        weight: 4
+        item:
+          material: MUSIC_DISC_OTHERSIDE
+          amount: 1
+          glow: true
+
+      disc_5:
+        display-name: "<gold>音乐唱片 - 5"
+        rarity: legendary
+        weight: 4
+        item:
+          material: MUSIC_DISC_5
+          amount: 1
+          glow: true
+
+      disc_pigstep:
+        display-name: "<gold>音乐唱片 - 猪步"
+        rarity: legendary
+        weight: 4
+        item:
+          material: MUSIC_DISC_PIGSTEP
+          amount: 1
+          glow: true
+
+      disc_relic:
+        display-name: "<gold>音乐唱片 - 遗物"
+        rarity: legendary
+        weight: 4
+        item:
+          material: MUSIC_DISC_RELIC
+          amount: 1
+          glow: true
+
+      disc_creator:
+        display-name: "<gold>音乐唱片 - 创造者"
+        rarity: legendary
+        weight: 4
+        item:
+          material: MUSIC_DISC_CREATOR
+          amount: 1
+          glow: true
+
+      disc_creator_music_box:
+        display-name: "<gold>音乐唱片 - 创造者（八音盒）"
+        rarity: legendary
+        weight: 4
+        item:
+          material: MUSIC_DISC_CREATOR_MUSIC_BOX
+          amount: 1
+          glow: true
+
+      disc_precipice:
+        display-name: "<gold>音乐唱片 - 悬崖"
+        rarity: legendary
+        weight: 4
+        item:
+          material: MUSIC_DISC_PRECIPICE
+          amount: 1
+          glow: true
+
+      disc_tears:
+        display-name: "<gold>音乐唱片 - 泪"
+        rarity: legendary
+        weight: 4
+        item:
+          material: MUSIC_DISC_TEARS
+          amount: 1
+          glow: true
+
+      disc_bounce:
+        display-name: "<gold>音乐唱片 - 弹跳"
+        rarity: legendary
+        weight: 4
+        item:
+          material: MUSIC_DISC_BOUNCE
+          amount: 1
+          glow: true
+
+      disc_lava_chicken:
+        display-name: "<gold>音乐唱片 - 岩浆鸡"
+        rarity: legendary
+        weight: 4
+        item:
+          material: MUSIC_DISC_LAVA_CHICKEN
+          amount: 1
+          glow: true
+
+      # ---------------- 传说的其它大奖 ----------------
+      elytra:                                  # 0.46%
+        display-name: "<gold>鞘翅"
+        rarity: legendary
+        weight: 12
+        item:
+          material: ELYTRA
+          amount: 1
+          name: "<gold>鞘翅"
+          lore:
+            - "<gray>天空从此属于你。"
+          enchants:
+            - "unbreaking:3"
+            - "mending:1"
+          unbreakable: true
+          glow: true
+      head_beizi2526:                          # 0.31%
+        display-name: "<gold>beizi2526 的头颅"
+        rarity: legendary
+        weight: 8
+        item:
+          material: PLAYER_HEAD
+          amount: 1
+          name: "<gold>beizi2526 的头颅"
+          lore:
+            - "<gray>被某个家伙盯上了。"
+          glow: true
+          # ── 玩家头颅配置 ──────────────────────────────────────────────
+          # 强烈建议填写 skull-texture：它把皮肤纹理直接写进物品，
+          # 不联网、不依赖服务器缓存，任何环境都能得到正确的人脸。
+          # 纹理值取自 Mojang 会话服务器：
+          #   https://sessionserver.mojang.com/session/minecraft/profile/<UUID>?unsigned=false
+          # 只有 skull-uuid / skull-owner 时，若该玩家从未在本服上线过，
+          # 服务器缓存里没有皮肤数据，会发出一个默认皮肤的头。
+          skull-owner: "beizi2526"
+          skull-uuid: "84612b4d-1237-4c35-a067-2139b3572923"
+          skull-texture: "ewogICJ0aW1lc3RhbXAiIDogMTc5MTE2ODA5NDcwNSwKICAicHJvZmlsZUlkIiA6ICI4NDYxMmI0ZDEyMzc0YzM1YTA2NzIxMzliMzU3MjkyMyIsCiAgInByb2ZpbGVOYW1lIiA6ICJiZWl6aTI1MjYiLAogICJzaWduYXR1cmVSZXF1aXJlZCIgOiB0cnVlLAogICJ0ZXh0dXJlcyIgOiB7CiAgICAiU0tJTiIgOiB7CiAgICAgICJ1cmwiIDogImh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvODg5ZDFlMjMwNjMzMWRiY2VhZGU3NDYwYmE1MTM4MDIxODg1NDhjNWMxOWJhZGY1ZDBkYjJiYzhlMWFiYTAzMyIsCiAgICAgICJtZXRhZGF0YSIgOiB7CiAgICAgICAgIm1vZGVsIiA6ICJzbGltIgogICAgICB9CiAgICB9LAogICAgIkNBUEUiIDogewogICAgICAidXJsIiA6ICJodHRwOi8vdGV4dHVyZXMubWluZWNyYWZ0Lm5ldC90ZXh0dXJlLzVlNmYzMTkzZTc0Y2QxNmNkZDY2MzdkOWJhZTU0ODRlM2EzN2ZmMmExNGMyZDE1N2M2NTlhMDc4MTBiMWJkY2EiCiAgICB9CiAgfQp9"
+          skull-signature: "nUJ7MuOi6fMtjt6T9mir8YjxLVeeC0QkWyu+SE+1KTda2nhitqMNvhRv5TeZbWeGybtdvZcHUSNrIeF2hvMjGxEPJ1SUcErYyQBXhvBSGg/Qz+AFdDXWxHUPNNp8MJZ4AbxEPnUDP1GYXSXKEIan5o9VtZVtSU9LG2/oqp8hJIoxt1P+3acVuvLb+qdGRoYvnJon/x2yuAN9iZ1cGqXK7xmfTzd2zUHGlrFqTv0TKbblGt0HeDao4rGNBUdOfzkWCam4nNxhSlkH9lzY+Ze5qfrKf50DJgjoHHicEIY1VOxebTdrQLFHtu7ReifUJpFvUONOQIVO19/pTVZeCwELZn1pV2WOW5GmNmEdclOqxrmxdLRTpR7Of2oO2GmRvebUfUmukEjcF8L6maDWR7e/hOm36QK4B0L3m5g8loVGGTxhVM7DQQ3oNSXSP50z2t/hEBM3Znc/MffY5Nj4hWQaqodLBfufUTE3pt6dO7wPq91ggzIApjhfukbh35hnkHjJrJqQfDw2WwOUfIMMjnjzx8QiqBhPoC3COyimoCTvr14fojD3z1Jh7VNv/F+vMFzVfhHChCHLhb891wCMfGphiJDB28UX7YXTi9s1cH0QZMDBhCxHYQNoXLa3QUQZ7NiPGMTWUxnsfPo1xdsTtdXy8zxQzEcV2v2kHC+OVGszGTw="
+      coins_jackpot:                           # 0.23%
+        display-name: "<gold>金币大奖"
+        rarity: legendary
+        weight: 6
+        currency:
+          id: vault
+          min: 300000
+          max: 800000

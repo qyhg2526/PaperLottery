@@ -1,6 +1,6 @@
 # PaperLottery
 
-> 当前版本 **1.0.1** ｜ 基于 **Paper 26.2 Dialog API** 的 Minecraft 抽奖插件，接入 **Vault** 经济系统并支持 **多货币**。
+> 当前版本 **1.1.0** ｜ 基于 **Paper 26.2 Dialog API** 的 Minecraft 抽奖插件，接入 **Vault** 经济系统并支持 **多货币**。
 
 PaperLottery 使用 Paper 原生对话框（Dialog）作为全部菜单界面，不占用任何背包格子，
 支持权重概率、连抽保底、限量奖品、活动加成、全服播报与 PlaceholderAPI 变量。
@@ -8,6 +8,61 @@ PaperLottery 使用 Paper 原生对话框（Dialog）作为全部菜单界面，
 ---
 
 ## 更新日志
+
+### 1.1.0 —— 每日抽奖上限 + 玩家头颅支持
+
+#### 新增：卡池级每日抽奖次数上限
+
+用于控制玩家每天的抽取节奏、抑制脚本刷奖。
+
+```yaml
+pools:
+  test:
+    daily-draw-limit: 100      # 每名玩家每天最多 100 次；-1 或不写表示不限
+```
+
+配套新增：
+
+* `settings.daily-draw-reset-zone` —— 「每天」的判定时区，可选 `local`（跟随服务器）
+  或任意 ZoneId（如 `UTC`、`Asia/Shanghai`）。跨时区运营建议用 `UTC` 全球统一重置。
+* 对话框显示「今日次数：12/100（剩余 88）」；用尽后按钮变为「今日次数已用尽」并禁用。
+* 剩余次数不足一次连抽时**整体拒绝**（而不是扣了钱只发一部分），提示还差多少次。
+* `paperlottery.limit.bypass` 权限（默认 OP）可无视上限，方便管理测试。
+* 管理面板新增「重置今日次数」按钮。
+* `/lottery info` 会列出每个卡池的每日上限。
+
+验证：在真实 Paper 26.2 服务端对产品代码跑 14 项断言，全部通过——
+上限内正常抽、达上限拒绝并返回 `draw.daily-limit-reached`、连抽超限返回
+`draw.daily-limit-partial`、`dailyProgress()` 数值正确、计数经 `playerdata.yml`
+往返读写一致、bypass 权限可越过上限。
+
+#### 新增：玩家头颅奖品（含皮肤）
+
+`PLAYER_HEAD` 类型的奖品现在支持直接写入皮肤纹理：
+
+```yaml
+      head_beizi2526:
+        display-name: "<gold>beizi2526 的头颅"
+        rarity: legendary
+        weight: 8
+        item:
+          material: PLAYER_HEAD
+          amount: 1
+          skull-owner: "beizi2526"
+          skull-uuid: "84612b4d-1237-4c35-a067-2139b3572923"
+          skull-texture: "eyJ0aW1lc3RhbXAiOi4uLg=="
+          skull-signature: "T8Ihb7T/..."
+```
+
+> **为什么必须填 `skull-texture`？** 只给 UUID / 名字时，插件需要向服务端玩家缓存
+> 查询皮肤；若该玩家从未在本服上线过，缓存里没有数据，发出去的会是**默认皮肤的空白头**。
+> 实测三种补全方式（`completeFromCache` / `complete`）在该情况下都拿不到纹理。
+> 直接把纹理写进配置则完全不依赖网络与缓存，任何环境都能显示正确的人脸。
+>
+> 纹理值获取方式（把 UUID 换成目标玩家）：
+> `https://sessionserver.mojang.com/session/minecraft/profile/<UUID>?unsigned=false`
+> 取返回 JSON 里 `properties[0].value` 填入 `skull-texture`，
+> `properties[0].signature` 填入 `skull-signature`。YAML 会自动处理长字符串折行。
 
 ### 1.0.1 —— 保底系统修复（重要）
 
@@ -90,7 +145,7 @@ PaperLottery 使用 Paper 原生对话框（Dialog）作为全部菜单界面，
 
 ## 安装步骤
 
-1. 将 `PaperLottery-1.0.1.jar` 放入服务端 `plugins/` 目录。
+1. 将 `PaperLottery-1.1.0.jar` 放入服务端 `plugins/` 目录。
 2. （可选）安装 `Vault.jar` 与一个经济插件，例如 EssentialsX。
 3. 启动服务器，插件会生成 `plugins/PaperLottery/config.yml`。
 4. 编辑 `config.yml` 配置货币、卡池、奖品与文案。
@@ -115,7 +170,7 @@ PaperLottery 使用 Paper 原生对话框（Dialog）作为全部菜单界面，
 pwsh -File ./build.ps1
 ```
 
-产物：`build/libs/PaperLottery-1.0.1.jar`
+产物：`build/libs/PaperLottery-1.1.0.jar`
 
 > **为什么脚本用 ECJ 而不是 javac？**
 > Paper 26.2 的 `paper-api` jar 中，部分方法同时带有
@@ -414,6 +469,7 @@ pools:
 | `cooldown-millis` | `1500` | 抽奖冷却（毫秒） |
 | `drop-when-full` | `true` | 背包满时是否掉落在地上 |
 | `history-limit` | `50` | 每名玩家保留的流水条数 |
+| `daily-draw-reset-zone` | `local` | 「每日」判定时区：`local` 或 `UTC`、`Asia/Shanghai` 等 |
 | `dialog.body-width` | `220` | 对话框正文宽度（1–1024） |
 | `dialog.use-item-body` | `false` | 是否使用原版物品正文组件 |
 | `dialog.after-action` | `close` | 按钮点击后行为：`close` / `none` / `wait` |
@@ -449,6 +505,7 @@ rarities:
 | `guarantee-rarity` | 每次抽取至少保证的品质 |
 | `ten-pull-rarity` | 连抽（≥2 次）至少保证的品质 |
 | `announce-rarities` | 抽到这些品质时全服播报 |
+| `daily-draw-limit` | 每名玩家每日抽奖次数上限（`-1` 或不写表示不限） |
 | `pity` | 保底规则数组 |
 
 ### `pools.<id>.prizes.<奖品ID>`
@@ -496,6 +553,7 @@ rarities:
 | `paperlottery.draw` | 所有玩家 | 执行抽奖 |
 | `paperlottery.pool.<卡池ID>` | — | 使用指定卡池（配合 `permission:` 字段） |
 | `paperlottery.bonus.<名称>` | — | 权重加成（配合 `bonus.permission-multiplier`） |
+| `paperlottery.limit.bypass` | OP | 无视卡池的每日抽奖次数上限 |
 | `paperlottery.admin` | OP | 管理命令与管理面板 |
 
 ---

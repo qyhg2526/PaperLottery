@@ -63,7 +63,11 @@ public record Prize(
             List<String> enchants,
             Integer modelData,
             boolean unbreakable,
-            boolean glow
+            boolean glow,
+            String skullOwner,
+            String skullUuid,
+            String skullTexture,
+            String skullSignature
     ) {
     }
 
@@ -143,6 +147,11 @@ public record Prize(
                 item.glow(),
                 ctx
         );
+        // 玩家头颅需要额外写入所有者信息（名称 / UUID / 皮肤纹理）
+        if (item.skullOwner() != null || item.skullUuid() != null || item.skullTexture() != null) {
+            ItemBuilder.applySkullOwner(stack, item.skullOwner(), item.skullUuid(),
+                    item.skullTexture(), item.skullSignature(), ctx);
+        }
         return ItemBuilder.tag(stack, "prize", id);
     }
 

@@ -32,6 +32,7 @@ import java.util.Locale;
  * @param useItemBody               是否使用原版 {@code item} 正文组件展示奖品
  * @param afterActionRaw            对话框动作完成后的行为：close / none / wait
  * @param animation                 抽奖动画设置
+ * @param dailyResetZoneRaw         「每日」重置所用时区：local 或 UTC 等 ZoneId
  */
 public record Settings(
         boolean debug,
@@ -54,7 +55,8 @@ public record Settings(
         int bodyWidth,
         boolean useItemBody,
         String afterActionRaw,
-        AnimationSettings animation
+        AnimationSettings animation,
+        String dailyResetZoneRaw
 ) {
 
     /** 时段权重加成：{@code HH:mm-HH:mm:倍率}。 */
@@ -131,14 +133,15 @@ public record Settings(
                 bodyWidth,
                 s.getBoolean("dialog.use-item-body", false),
                 s.getString("dialog.after-action", "close"),
-                AnimationSettings.load(config.getConfigurationSection("animation"))
+                AnimationSettings.load(config.getConfigurationSection("animation")),
+                s.getString("daily-draw-reset-zone", "local")
         );
     }
 
     public static Settings defaults(String defaultPool) {
         return new Settings(false, defaultPool, 100, 1, List.of(1, 5, 10), true, 1500L, false, true,
                 true, true, "legendary", true, List.of(), 1.0D, List.of(), 50, 220, false, "close",
-                AnimationSettings.defaults());
+                AnimationSettings.defaults(), "local");
     }
 
     private static int parseMinute(String hour, String minute) {
@@ -152,6 +155,38 @@ public record Settings(
             case "wait", "wait-for-response" -> DialogBase.DialogAfterAction.WAIT_FOR_RESPONSE;
             default -> DialogBase.DialogAfterAction.CLOSE;
         };
+    }
+
+    /** 已告警过的非法时区值，避免每次调用都刷屏（record 不能有实例字段）。 */
+    private static final java.util.Set<String> WARNED_ZONES =
+            java.util.concurrent.ConcurrentHashMap.newKeySet();
+
+    /**
+     * 「每日」判定所用的时区。
+     * <p>
+     * {@code local} 表示跟随服务器系统时区；也可直接写 ZoneId，例如 {@code UTC}、
+     * {@code Asia/Shanghai}。跨时区运营的服务器通常用 {@code UTC} 统一重置时间。
+     * 配置写错时回退到系统时区并告警一次。
+     */
+    public java.time.ZoneId dailyResetZone() {
+        String raw = dailyResetZoneRaw == null ? "local" : dailyResetZoneRaw.trim();
+        if (raw.isEmpty() || "local".equalsIgnoreCase(raw) || "server".equalsIgnoreCase(raw)) {
+            return java.time.ZoneId.systemDefault();
+        }
+        try {
+            return java.time.ZoneId.of(raw);
+        } catch (Throwable t) {
+            if (WARNED_ZONES.add(raw)) {
+                org.bukkit.Bukkit.getLogger().warning("[PaperLottery] 无法解析 daily-draw-reset-zone=\""
+                        + raw + "\"，已回退到服务器系统时区。可用值示例：local / UTC / Asia/Shanghai");
+            }
+            return java.time.ZoneId.systemDefault();
+        }
+    }
+
+    /** 每日重置时区的可读名称，用于界面与命令提示。 */
+    public String dailyResetZoneName() {
+        return dailyResetZone().getId();
     }
 
     /** 计算当前时刻适用的全局权重倍率（活动 / 周末 / 权限）。 */

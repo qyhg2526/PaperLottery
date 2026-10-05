@@ -316,9 +316,10 @@ public final class LotteryCommand implements CommandExecutor, TabCompleter {
         }
         Text.sendAny(sender, "<gray>卡池数量：<white>" + ctx.config().pools().size());
         for (Pool pool : ctx.config().pools().values()) {
+            String daily = pool.hasDailyDrawLimit() ? (", 每日上限 " + pool.dailyDrawLimit() + " 次") : "";
             Text.sendAny(sender, "  <dark_gray>- <white>" + pool.id() + " <dark_gray>("
                     + Text.plain(pool.displayName()) + ", 奖品 " + pool.prizes().size() + " 个, 货币 "
-                    + pool.currencyId() + ")");
+                    + pool.currencyId() + daily + ")");
         }
         Text.sendAny(sender, "<gray>追踪玩家：<white>" + ctx.data().trackedPlayers());
     }

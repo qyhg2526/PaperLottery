@@ -26,6 +26,9 @@ permissions:
     default: true
     children:
       paperlottery.use: true
+  paperlottery.limit.bypass:
+    description: 忽略卡池的每日抽奖次数上限
+    default: op
   paperlottery.admin:
     description: 管理员权限（重载、卡池与奖品管理）
     default: op
