@@ -28,7 +28,7 @@ $resDir = Join-Path $root 'src\main\resources'
 $buildDir = Join-Path $root 'build'
 $classesDir = Join-Path $buildDir 'classes'
 $libsDir = Join-Path $buildDir 'libs'
-$version = '1.1.0'
+$version = '1.2.0'
 
 # ---------------------------------------------------------------- 前置检查
 if (-not (Test-Path $lib)) { throw "缺少依赖目录：$lib" }

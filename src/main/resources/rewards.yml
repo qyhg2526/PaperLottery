@@ -10,9 +10,9 @@
 #
 #  ── 权重与概率 ──────────────────────────────────────────────────────────
 #  weight 越大越容易抽中，概率 = 本奖品权重 ÷ 当前可用奖品权重之和。
-#  下方每条注释里的百分比，是按「全部奖品均可用」算出的参考值（总权重 2587）。
+#  下方每条注释里的百分比，是按「全部奖品均可用」算出的参考值（总权重 3176）。
 #
-#  分级概率：普通 54.50% | 优秀 23.97% | 稀有 13.53% | 史诗 3.59% | 传说 4.41%
+#  分级概率：普通 44.40% | 优秀 24.45% | 稀有 19.87% | 史诗 6.52% | 传说 4.76%
 # ==========================================================================
 
 pools:
@@ -32,7 +32,7 @@ pools:
     # 每名玩家每天在该卡池最多能抽多少次（按 config.yml 的
     # daily-draw-reset-zone 判定「每天」，默认跟随服务器时区）。
     # -1 或不写表示不限。拥有 paperlottery.limit.bypass 权限的玩家不受限制。
-    daily-draw-limit: 100
+    daily-draw-limit: 200
     # 每次至少保证「优秀」以上，避免十连全是腐肉
     guarantee-rarity: uncommon
     # 连抽至少保证「稀有」以上
@@ -51,7 +51,7 @@ pools:
 
     prizes:
       # ==================================================================
-      #  普通 common —— 基础补给         合计 1410 / 2587 = 54.50%
+      #  普通 common —— 基础补给         合计 1410 / 3176 = 44.40%
       # ==================================================================
       rotten_flesh:
         display-name: "<gray>腐肉"
@@ -81,7 +81,7 @@ pools:
           amount-max: 24
 
       # ==================================================================
-      #  优秀 uncommon —— 实用资源        合计 620 / 2587 = 23.97%
+      #  优秀 uncommon —— 实用资源        合计 620 / 3176 = 19.52%（不含附魔书）
       # ==================================================================
       iron_ingot:                              # 12.27%
         display-name: "<green>铁锭"
@@ -121,7 +121,7 @@ pools:
           amount: 1
 
       # ==================================================================
-      #  稀有 rare —— 高价值资源与礼包     合计 350 / 2587 = 13.53%
+      #  稀有 rare —— 高价值资源与礼包     合计 350 / 3176 = 11.02%（不含附魔书）
       # ==================================================================
       gold_ingot:                              # 5.75%
         display-name: "<blue>金锭"
@@ -159,7 +159,7 @@ pools:
           max: 45000
 
       # ==================================================================
-      #  史诗 epic —— 值得期待的奖励       合计 93 / 2587 = 3.59%
+      #  史诗 epic —— 值得期待的奖励       合计 93 / 3176 = 2.93%（不含附魔书）
       # ==================================================================
       silence_template:                        # 1.53%
         display-name: "<light_purple>幽静盔甲纹饰"
@@ -190,9 +190,9 @@ pools:
 
       # ==================================================================
       #  传说 legendary —— 大奖，抽到会全服播报
-      #  合计 114 / 2587 = 4.41%
+      #  合计 114 / 3176 = 3.59%（不含附魔书）
       #
-      #  22 张音乐唱片各占 4 权重（合计 88，占 3.40%），
+      #  22 张音乐唱片各占 4 权重（合计 88，占 2.77%），
       #  每张唱片的单独概率约 0.153% —— 「随机唱片」由权重抽取天然实现。
       # ==================================================================
       disc_13:
@@ -392,6 +392,284 @@ pools:
           material: MUSIC_DISC_LAVA_CHICKEN
           amount: 1
           glow: true
+
+
+      # ==================================================================
+      #  附魔书 —— ENCHANTED_BOOK 的附魔会写入「存储附魔」，可直接取出使用
+      #  等级取各附魔的实用档位；ens/levels 可自行调整
+      # ==================================================================
+
+      # ---------------- 优秀 uncommon：8 本，权重合计 157 = 4.94% ----------------
+      ench_density:
+        display-name: "<white>附魔书 <dark_gray>· <yellow>密度 3"
+        rarity: uncommon
+        weight: 24                          # 0.756%
+        item:
+          material: ENCHANTED_BOOK
+          amount: 1
+          lore:
+            - "<dark_gray>重锤"
+          enchants:
+            - "density:3"
+      ench_breach:
+        display-name: "<white>附魔书 <dark_gray>· <yellow>破甲 3"
+        rarity: uncommon
+        weight: 22                          # 0.693%
+        item:
+          material: ENCHANTED_BOOK
+          amount: 1
+          lore:
+            - "<dark_gray>重锤"
+          enchants:
+            - "breach:3"
+      ench_lunge:
+        display-name: "<white>附魔书 <dark_gray>· <yellow>突进 2"
+        rarity: uncommon
+        weight: 22                          # 0.693%
+        item:
+          material: ENCHANTED_BOOK
+          amount: 1
+          lore:
+            - "<dark_gray>长矛"
+          enchants:
+            - "lunge:2"
+      ench_impaling:
+        display-name: "<white>附魔书 <dark_gray>· <yellow>穿刺 3"
+        rarity: uncommon
+        weight: 21                          # 0.661%
+        item:
+          material: ENCHANTED_BOOK
+          amount: 1
+          lore:
+            - "<dark_gray>三叉戟"
+          enchants:
+            - "impaling:3"
+      ench_piercing:
+        display-name: "<white>附魔书 <dark_gray>· <yellow>穿透 3"
+        rarity: uncommon
+        weight: 18                          # 0.567%
+        item:
+          material: ENCHANTED_BOOK
+          amount: 1
+          lore:
+            - "<dark_gray>弩"
+          enchants:
+            - "piercing:3"
+      ench_quick_charge:
+        display-name: "<white>附魔书 <dark_gray>· <yellow>快速装填 2"
+        rarity: uncommon
+        weight: 18                          # 0.567%
+        item:
+          material: ENCHANTED_BOOK
+          amount: 1
+          lore:
+            - "<dark_gray>弩"
+          enchants:
+            - "quick_charge:2"
+      ench_multishot:
+        display-name: "<white>附魔书 <dark_gray>· <yellow>多重射击 1"
+        rarity: uncommon
+        weight: 16                          # 0.504%
+        item:
+          material: ENCHANTED_BOOK
+          amount: 1
+          lore:
+            - "<dark_gray>弩"
+          enchants:
+            - "multishot:1"
+      ench_loyalty:
+        display-name: "<white>附魔书 <dark_gray>· <yellow>忠诚 3"
+        rarity: uncommon
+        weight: 16                          # 0.504%
+        item:
+          material: ENCHANTED_BOOK
+          amount: 1
+          lore:
+            - "<dark_gray>三叉戟"
+          enchants:
+            - "loyalty:3"
+
+      # ---------------- 稀有 rare：10 本，权重合计 358 = 11.27% ----------------
+      ench_protection:
+        display-name: "<white>附魔书 <dark_gray>· <yellow>保护 4"
+        rarity: rare
+        weight: 50                          # 1.574%
+        item:
+          material: ENCHANTED_BOOK
+          amount: 1
+          lore:
+            - "<dark_gray>盔甲"
+          enchants:
+            - "protection:4"
+      ench_sharpness:
+        display-name: "<white>附魔书 <dark_gray>· <yellow>锋利 5"
+        rarity: rare
+        weight: 50                          # 1.574%
+        item:
+          material: ENCHANTED_BOOK
+          amount: 1
+          lore:
+            - "<dark_gray>剑斧"
+          enchants:
+            - "sharpness:5"
+      ench_efficiency:
+        display-name: "<white>附魔书 <dark_gray>· <yellow>效率 5"
+        rarity: rare
+        weight: 45                          # 1.417%
+        item:
+          material: ENCHANTED_BOOK
+          amount: 1
+          lore:
+            - "<dark_gray>工具"
+          enchants:
+            - "efficiency:5"
+      ench_unbreaking:
+        display-name: "<white>附魔书 <dark_gray>· <yellow>耐久 3"
+        rarity: rare
+        weight: 45                          # 1.417%
+        item:
+          material: ENCHANTED_BOOK
+          amount: 1
+          lore:
+            - "<dark_gray>通用"
+          enchants:
+            - "unbreaking:3"
+      ench_power:
+        display-name: "<white>附魔书 <dark_gray>· <yellow>力量 5"
+        rarity: rare
+        weight: 38                          # 1.196%
+        item:
+          material: ENCHANTED_BOOK
+          amount: 1
+          lore:
+            - "<dark_gray>弓"
+          enchants:
+            - "power:5"
+      ench_fortune:
+        display-name: "<white>附魔书 <dark_gray>· <yellow>时运 3"
+        rarity: rare
+        weight: 30                          # 0.945%
+        item:
+          material: ENCHANTED_BOOK
+          amount: 1
+          lore:
+            - "<dark_gray>工具"
+          enchants:
+            - "fortune:3"
+      ench_looting:
+        display-name: "<white>附魔书 <dark_gray>· <yellow>抢夺 3"
+        rarity: rare
+        weight: 28                          # 0.882%
+        item:
+          material: ENCHANTED_BOOK
+          amount: 1
+          lore:
+            - "<dark_gray>剑"
+          enchants:
+            - "looting:3"
+      ench_respiration:
+        display-name: "<white>附魔书 <dark_gray>· <yellow>水下呼吸 3"
+        rarity: rare
+        weight: 26                          # 0.819%
+        item:
+          material: ENCHANTED_BOOK
+          amount: 1
+          lore:
+            - "<dark_gray>头盔"
+          enchants:
+            - "respiration:3"
+      ench_feather_falling:
+        display-name: "<white>附魔书 <dark_gray>· <yellow>摔落保护 4"
+        rarity: rare
+        weight: 24                          # 0.756%
+        item:
+          material: ENCHANTED_BOOK
+          amount: 1
+          lore:
+            - "<dark_gray>靴子"
+          enchants:
+            - "feather_falling:4"
+      ench_depth_strider:
+        display-name: "<white>附魔书 <dark_gray>· <yellow>深海探索者 3"
+        rarity: rare
+        weight: 22                          # 0.693%
+        item:
+          material: ENCHANTED_BOOK
+          amount: 1
+          lore:
+            - "<dark_gray>靴子"
+          enchants:
+            - "depth_strider:3"
+
+      # ---------------- 史诗 epic：4 本，权重合计 60 = 1.89% ----------------
+      ench_silk_touch:
+        display-name: "<white>附魔书 <dark_gray>· <yellow>精准采集 1"
+        rarity: epic
+        weight: 20                          # 0.63%
+        item:
+          material: ENCHANTED_BOOK
+          amount: 1
+          lore:
+            - "<dark_gray>工具"
+          enchants:
+            - "silk_touch:1"
+      ench_mending:
+        display-name: "<white>附魔书 <dark_gray>· <yellow>经验修补 1"
+        rarity: epic
+        weight: 18                          # 0.567%
+        item:
+          material: ENCHANTED_BOOK
+          amount: 1
+          lore:
+            - "<dark_gray>通用 · 宝藏"
+          enchants:
+            - "mending:1"
+      ench_infinity:
+        display-name: "<white>附魔书 <dark_gray>· <yellow>无限 1"
+        rarity: epic
+        weight: 12                          # 0.378%
+        item:
+          material: ENCHANTED_BOOK
+          amount: 1
+          lore:
+            - "<dark_gray>弓 · 宝藏"
+          enchants:
+            - "infinity:1"
+      ench_frost_walker:
+        display-name: "<white>附魔书 <dark_gray>· <yellow>冰霜行者 2"
+        rarity: epic
+        weight: 10                          # 0.315%
+        item:
+          material: ENCHANTED_BOOK
+          amount: 1
+          lore:
+            - "<dark_gray>靴子 · 宝藏"
+          enchants:
+            - "frost_walker:2"
+
+      # ---------------- 传说 legendary：2 本，权重合计 14 = 0.44% ----------------
+      ench_swift_sneak:
+        display-name: "<white>附魔书 <dark_gray>· <yellow>迅捷潜行 3"
+        rarity: legendary
+        weight: 8                          # 0.252%
+        item:
+          material: ENCHANTED_BOOK
+          amount: 1
+          lore:
+            - "<dark_gray>护腿 · 宝藏"
+          enchants:
+            - "swift_sneak:3"
+      ench_soul_speed:
+        display-name: "<white>附魔书 <dark_gray>· <yellow>灵魂疾行 3"
+        rarity: legendary
+        weight: 6                          # 0.189%
+        item:
+          material: ENCHANTED_BOOK
+          amount: 1
+          lore:
+            - "<dark_gray>靴子 · 宝藏"
+          enchants:
+            - "soul_speed:3"
 
       # ---------------- 传说的其它大奖 ----------------
       elytra:                                  # 0.46%

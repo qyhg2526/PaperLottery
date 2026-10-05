@@ -1,6 +1,7 @@
 package cn.dsh.lottery.util;
 
 import cn.dsh.lottery.config.Messages;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -63,13 +64,29 @@ public final class ItemBuilder {
             meta.lore(Text.mmList(lore, ctx));
         }
         if (enchants != null) {
+            // 附魔书（ENCHANTED_BOOK）的附魔必须写进「存储附魔」，
+            // 否则只会得到一本「自身带附魔的书」，右键无法取出附魔。
+            boolean storage = material == Material.ENCHANTED_BOOK
+                    && meta instanceof org.bukkit.inventory.meta.EnchantmentStorageMeta;
             for (String raw : enchants) {
                 Enchantment enchantment = resolveEnchantment(raw);
                 if (enchantment == null) {
                     continue;
                 }
                 int level = parseLevel(raw);
-                meta.addEnchant(enchantment, level, true);
+                if (storage) {
+                    ((org.bukkit.inventory.meta.EnchantmentStorageMeta) meta).addStoredEnchant(enchantment, level, true);
+                } else {
+                    meta.addEnchant(enchantment, level, true);
+                }
+            }
+            // 没有指定显示名时，自动按存储的附魔生成名字，
+            // 否则客户端只会显示「附魔书」看不出内容。
+            if (storage && (name == null || name.isBlank())) {
+                Component auto = storedEnchantName(meta, ctx);
+                if (auto != null) {
+                    meta.displayName(auto);
+                }
             }
         }
         if (modelData != null) {
@@ -85,6 +102,45 @@ public final class ItemBuilder {
         }
         stack.setItemMeta(meta);
         return stack;
+    }
+
+    /**
+     * 按附魔书里存储的附魔自动生成显示名，例如「<gray>附魔书 <dark_gray>· <white>经验修补 I」。
+     * <p>
+     * 名字取自附魔的翻译键，交由客户端按玩家语言渲染，因此中英文客户端都能正确显示。
+     *
+     * @return 生成的显示名；没有存储附魔时返回 null
+     */
+    private static Component storedEnchantName(ItemMeta meta, PlaceholderContext ctx) {
+        if (!(meta instanceof org.bukkit.inventory.meta.EnchantmentStorageMeta storage)
+                || !storage.hasStoredEnchants()) {
+            return null;
+        }
+        Map.Entry<Enchantment, Integer> first = storage.getStoredEnchants().entrySet().iterator().next();
+        // 附魔名走翻译键，等级用罗马数字；这样不依赖服务端语言文件
+        Component enchantName = Component.translatable("enchantment."
+                + first.getKey().getKey().getNamespace() + "." + first.getKey().getKey().getKey());
+        return Component.text().append(Text.mm("<gray>附魔书 <dark_gray>· <white>"))
+                .append(enchantName)
+                .append(Component.text(" " + romanLevel(first.getValue())))
+                .build();
+    }
+
+    /** 1~10 转罗马数字，超出范围直接返回阿拉伯数字。 */
+    public static String romanLevel(int level) {
+        return switch (level) {
+            case 1 -> "I";
+            case 2 -> "II";
+            case 3 -> "III";
+            case 4 -> "IV";
+            case 5 -> "V";
+            case 6 -> "VI";
+            case 7 -> "VII";
+            case 8 -> "VIII";
+            case 9 -> "IX";
+            case 10 -> "X";
+            default -> String.valueOf(level);
+        };
     }
 
     /** 在物品上写入插件标记，便于统计与找回。 */
